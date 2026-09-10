@@ -1,3 +1,3 @@
-from .inference_service import MLInferenceService
+from .inference_service import MLInferenceService, MLInferenceResult
 
-__all__ = ["MLInferenceService"]
+__all__ = ["MLInferenceService", "MLInferenceResult"]
