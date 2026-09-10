@@ -5,11 +5,12 @@
   "type": "module",
   "description": "MailTrace AI — Pre-Delivery Email Security Gateway + Webmail Interface",
   "scripts": {
-    "dev": "npm --prefix frontend run dev",
-    "dev:backend": "py -3.12 -m uvicorn security.app.main:app --reload --port 8000",
-    "dev:frontend": "npm --prefix frontend run dev",
-    "build": "npm --prefix frontend run build",
-    "start": "npm --prefix frontend run dev"
+    "dev": "vite",
+    "dev:user": "vite",
+    "dev:security": "npm --prefix frontend run dev",
+    "dev:backend": "python -m uvicorn app.main:app --reload --port 8000",
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "dependencies": {
     "lucide-react": "^0.439.0",
