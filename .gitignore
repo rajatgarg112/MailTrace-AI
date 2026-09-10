@@ -8,3 +8,24 @@ htmlcov/
 .venv/
 env/
 venv/
+
+# ML Datasets & Large Data Files (Ignore contents, keep directory structures)
+*.csv
+*.tsv
+*.jsonl
+*.parquet
+*.feather
+
+# ML Model Weights & Binary Artifacts
+*.pt
+*.pth
+*.bin
+*.safetensors
+*.onnx
+*.pkl
+*.joblib
+*.h5
+*.ckpt
+
+# Keep directory structure via .gitkeep
+!/**/.gitkeep

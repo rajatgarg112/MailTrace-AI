@@ -4,7 +4,7 @@ Configuration models for MailTrace AI ML components.
 
 from dataclasses import dataclass, field
 from typing import Dict, Any, Optional
-import os
+from .training_config import TrainingConfig
 
 
 @dataclass
@@ -34,6 +34,7 @@ class MLConfig:
     """Master configuration for the ML module."""
     model: ModelConfig = field(default_factory=ModelConfig)
     features: FeatureConfig = field(default_factory=FeatureConfig)
+    training: TrainingConfig = field(default_factory=TrainingConfig)
     environment: str = "development"
     debug_mode: bool = False
     failsafe_fallback_enabled: bool = True
@@ -44,10 +45,12 @@ class MLConfig:
         """Factory method to construct MLConfig from a dictionary."""
         model_dict = config_dict.get("model", {})
         feat_dict = config_dict.get("features", {})
+        training_dict = config_dict.get("training", {})
         
         return cls(
             model=ModelConfig(**model_dict),
             features=FeatureConfig(**feat_dict),
+            training=TrainingConfig.from_dict(training_dict),
             environment=config_dict.get("environment", "development"),
             debug_mode=config_dict.get("debug_mode", False),
             failsafe_fallback_enabled=config_dict.get("failsafe_fallback_enabled", True),
