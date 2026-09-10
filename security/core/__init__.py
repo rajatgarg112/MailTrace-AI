@@ -1,0 +1,3 @@
+"""
+PlaceMate AI Core Package
+"""

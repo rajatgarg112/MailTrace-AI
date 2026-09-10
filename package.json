@@ -1,13 +1,15 @@
 {
-  "name": "mailtrace-ai-frontend",
-  "private": true,
+  "name": "mailtrace-ai",
   "version": "1.0.0",
+  "private": true,
   "type": "module",
+  "description": "MailTrace AI — Pre-Delivery Email Security Gateway + Webmail Interface",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
+    "dev": "npm --prefix frontend run dev",
+    "dev:backend": "py -3.12 -m uvicorn security.app.main:app --reload --port 8000",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build",
+    "start": "npm --prefix frontend run dev"
   },
   "dependencies": {
     "lucide-react": "^0.439.0",
