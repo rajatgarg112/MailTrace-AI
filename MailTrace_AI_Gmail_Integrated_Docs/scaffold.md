@@ -123,7 +123,7 @@ Quarantined — 1.87 s
 
 ```text
 mailtrace-ai/
-├── backend/
+├── database/
 │   ├── app/
 │   │   ├── main.py
 │   │   ├── api/

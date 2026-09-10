@@ -13,6 +13,9 @@ __pycache__/
 .pytest_cache/
 .coverage
 htmlcov/
+*.egg-info/
+
+# Python virtual environments
 .venv/
 env/
 venv/
@@ -21,9 +24,30 @@ venv/
 node_modules/
 dist/
 build/
-.DS_Store
 
 # IDE & OS
 .vscode/
 .idea/
+.DS_Store
 Thumbs.db
+
+# ML Datasets & Large Data Files
+*.csv
+*.tsv
+*.jsonl
+*.parquet
+*.feather
+
+# ML Model Weights & Binary Artifacts
+*.pt
+*.pth
+*.bin
+*.safetensors
+*.onnx
+*.pkl
+*.joblib
+*.h5
+*.ckpt
+
+# Keep directory structure via .gitkeep
+!/**/.gitkeep

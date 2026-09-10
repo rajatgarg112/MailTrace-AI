@@ -1,6 +1,8 @@
 {
   "name": "mailtrace-ai",
   "version": "1.0.0",
+  "private": true,
+  "type": "module",
   "description": "MailTrace AI — Pre-Delivery Email Security Gateway + Webmail Interface",
   "scripts": {
     "dev": "npm --prefix frontend run dev",
@@ -8,5 +10,17 @@
     "dev:frontend": "npm --prefix frontend run dev",
     "build": "npm --prefix frontend run build",
     "start": "npm --prefix frontend run dev"
+  },
+  "dependencies": {
+    "lucide-react": "^0.439.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.26.2"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "vite": "^5.4.2"
   }
 }
