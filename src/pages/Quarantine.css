@@ -1,0 +1,248 @@
+.quarantine-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.quarantine-header-card {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  padding: 1.25rem 1.5rem;
+  border-radius: 14px;
+}
+
+.header-icon-box {
+  width: 52px;
+  height: 52px;
+  background: #ffe4e6;
+  border: 1px solid #fecdd3;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.header-info {
+  flex: 1;
+}
+
+.header-info h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #991b1b;
+}
+
+.header-info p {
+  margin: 4px 0 0 0;
+  font-size: 0.85rem;
+  color: #7f1d1d;
+  line-height: 1.4;
+}
+
+.header-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  background: #ffffff;
+  border: 1px solid #fecaca;
+  padding: 0.5rem 1.25rem;
+  border-radius: 10px;
+}
+
+.stat-value {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #dc2626;
+}
+
+.stat-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #7f1d1d;
+  font-weight: 600;
+}
+
+/* Toast */
+.quarantine-toast {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #047857;
+  padding: 0.65rem 1rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  animation: fadeIn 0.2s ease;
+}
+
+/* Table Card */
+.quarantine-table-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.04);
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.quarantine-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.85rem;
+}
+
+.quarantine-table th {
+  background: #f8fafc;
+  color: #475569;
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.quarantine-table td {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.quarantine-row:hover {
+  background: #f8fafc;
+}
+
+.cell-sender {
+  display: flex;
+  flex-direction: column;
+}
+
+.sender-title {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.sender-sub {
+  font-size: 0.72rem;
+  color: #64748b;
+}
+
+.cell-subject {
+  color: #334155;
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cell-reason {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #b45309;
+  font-size: 0.8rem;
+  font-weight: 500;
+  max-width: 200px;
+}
+
+.cell-risk {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.risk-bar-track {
+  width: 60px;
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.risk-bar-fill {
+  height: 100%;
+  border-radius: 9999px;
+}
+
+.risk-number {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #dc2626;
+}
+
+.cell-date {
+  color: #64748b;
+  font-size: 0.78rem;
+}
+
+.action-buttons-group {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.4rem;
+}
+
+.btn-action {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+}
+
+.btn-view {
+  background: #e0f2fe;
+  color: #0369a1;
+  border-color: #bae6fd;
+}
+.btn-view:hover { background: #bae6fd; }
+
+.btn-release {
+  background: #ecfdf5;
+  color: #047857;
+  border-color: #a7f3d0;
+}
+.btn-release:hover { background: #d1fae5; }
+
+.btn-delete {
+  background: #fef2f2;
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+.btn-delete:hover { background: #fee2e2; }
+
+.btn-report {
+  background: #faf5ff;
+  color: #6b21a8;
+  border-color: #e9d5ff;
+}
+.btn-report:hover { background: #f3e8ff; }
+
+.quarantine-loading,
+.quarantine-empty-state {
+  padding: 4rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  text-align: center;
+  color: #64748b;
+}
