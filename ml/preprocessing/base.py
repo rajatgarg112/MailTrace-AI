@@ -15,11 +15,15 @@ class ProcessedEmail:
     cleaned_subject: str = ""
     cleaned_body: str = ""
     combined_text: str = ""
+    normalized_text: str = ""
     sender_email: Optional[str] = None
     sender_domain: Optional[str] = None
+    recipients: List[str] = field(default_factory=list)
+    recipient_domains: List[str] = field(default_factory=list)
     extracted_urls: List[str] = field(default_factory=list)
     extracted_emails: List[str] = field(default_factory=list)
     tokens: List[str] = field(default_factory=list)
+    text_indicators: Dict[str, Any] = field(default_factory=dict)
     metadata: Dict[str, Any] = field(default_factory=dict)
 
 
@@ -32,7 +36,7 @@ class BasePreprocessor(ABC):
         Process raw input into a standardized ProcessedEmail structure.
         
         Args:
-            input_data: Dict or string representing the raw email payload.
+            input_data: Dict, string, or email object representing the raw payload.
             
         Returns:
             ProcessedEmail dataclass object.
