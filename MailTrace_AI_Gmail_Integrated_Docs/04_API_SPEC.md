@@ -1,63 +1,115 @@
-# MailTrace AI --- Gmail Integration API
+# MailTrace AI — Delivery Gateway API Specification
 
-Backend: FastAPI.
+The API models MailTrace as an email-security gateway and mailbox service.
 
-## POST `/gmail/events`
+## 1. Receive an email
 
-Accepts Gmail mailbox-change events and triggers message processing.
+`POST /api/deliveries`
 
-Responsibilities: - validate event - identify relevant changes - fetch
-message - prevent duplicate processing - trigger analysis
+Creates a delivery transaction and starts pre-delivery analysis.
 
-## POST `/email/analyze`
+Example request:
 
-Analyzes a raw email or `.eml` fixture for development/re-analysis.
-
-## GET `/cases`
-
-Lists forensic cases.
-
-## POST `/cases`
-
-Creates a manual case when required.
-
-## GET `/cases/{case_id}`
-
-Returns complete case analysis and evidence metadata.
-
-## GET `/reports/{case_id}`
-
-Generates or retrieves the integrity-verifiable report.
-
-## Gmail Action Service
-
-Keep Gmail-specific actions in a dedicated service: - labels - supported
-message handling - action logging - previous-state recording - API error
-handling
-
-Never expose OAuth tokens or API secrets. Keep analysis independent from
-Gmail-specific code.
-
-## Risk Response Contract
-
-Decision responses should expose:
-
-``` json
+```json
 {
-  "level": "SAFE | SUSPICIOUS | MALICIOUS | UNKNOWN",
-  "score": 0.0,
-  "reasoning": [],
-  "alerts": [],
-  "gmail_action": null
+  "recipient": "user@mailtrace.local",
+  "raw_email": "<RFC-5322 message>",
+  "source": "SMTP_SIMULATION"
 }
 ```
 
-Optional feedback endpoint/workflow can record analyst outcomes such as
-confirmed threat, false positive, false negative and marked safe.
+Example response:
 
-## Gmail Integration Constraint
+```json
+{
+  "delivery_id": "del_123",
+  "status": "SCANNING"
+}
+```
 
-`/gmail/events` represents a supported Gmail/Workspace event ingestion
-path. It does not imply that MailTrace is positioned directly in Gmail's
-SMTP delivery path or that it can replace Gmail's native spam
-classifier.
+## 2. Delivery status
+
+`GET /api/deliveries/{delivery_id}`
+
+Returns:
+
+- current delivery status;
+- analysis status;
+- risk classification;
+- risk score;
+- decision action;
+- scan latency;
+- total delivery latency.
+
+## 3. Mailbox
+
+`GET /api/mailboxes/{mailbox_id}/messages`
+
+Returns messages that have passed through the MailTrace delivery pipeline.
+
+`GET /api/messages/{email_id}`
+
+Returns message content plus security findings.
+
+## 4. Quarantine
+
+`GET /api/quarantine`
+
+`POST /api/quarantine/{email_id}/release`
+
+`POST /api/quarantine/{email_id}/delete`
+
+Quarantine is an application-owned security store in the prototype.
+
+## 5. Analysis details
+
+`GET /api/messages/{email_id}/analysis`
+
+Returns:
+
+```json
+{
+  "classification": "MALICIOUS",
+  "risk_score": 0.96,
+  "signals": [
+    "credential harvesting",
+    "suspicious URL",
+    "sender/domain mismatch"
+  ],
+  "timing": {
+    "scan_latency_ms": 1420,
+    "total_delivery_latency_ms": 1510
+  }
+}
+```
+
+## 6. Demo injection endpoints
+
+For SIH demonstrations:
+
+`POST /api/demo/seed/phishing`
+`POST /api/demo/seed/benign`
+`POST /api/demo/seed/spoofed-sender`
+`POST /api/demo/seed/bec`
+`POST /api/demo/seed/suspicious-attachment`
+
+These endpoints should create an incoming delivery transaction, not simply insert a message directly into Inbox.
+
+## 7. Delivery event stream
+
+The frontend may subscribe to:
+
+`GET /api/deliveries/{delivery_id}/events`
+
+Events:
+
+```text
+RECEIVED
+PARSING
+ANALYZING
+CORRELATING
+DECIDING
+DELIVERED / WARNING / QUARANTINED / REJECTED / HOLD
+```
+
+This supports a live delivery-security animation in the UI.

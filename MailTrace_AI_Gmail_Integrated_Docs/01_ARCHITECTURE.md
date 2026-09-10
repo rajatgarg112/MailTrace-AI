@@ -1,75 +1,147 @@
-# MailTrace AI --- Gmail-Integrated Architecture
+# MailTrace AI — Pre-Delivery Email Security Architecture
 
-MailTrace AI is a security/forensic engine integrated with Gmail. Gmail
-is the primary user environment; an analyst dashboard is optional.
+## 1. Product goal
 
-## Runtime
+MailTrace is a **mail-delivery security gateway** for the prototype. An incoming message is accepted by the MailTrace mail server, analyzed before it is placed in the recipient inbox, and only then delivered to the MailTrace mailbox.
 
-``` text
-Gmail → Gmail Integration → FastAPI → Evidence
-→ Analysis Engine → Decision Engine → Gmail Action
-→ Case + Forensic Report
+The project does not require access to Gmail's database, Gmail backend, or Google internal mail infrastructure. The MailTrace prototype owns the complete demonstration mail path.
+
+## 2. Core delivery flow
+
+```text
+Incoming Email / Demo SMTP Event
+            ↓
+      MailTrace Ingress
+            ↓
+      Evidence Capture
+            ↓
+   Fast Parallel Analysis
+   ┌────────┬────────┬──────────┐
+   ↓        ↓        ↓          ↓
+ Headers   Body     URLs   Attachments
+   ↓        ↓        ↓          ↓
+ Auth    AI/ML    Reputation  Static Scan
+   └────────┴────────┴──────────┘
+            ↓
+      Correlation Engine
+            ↓
+        Risk Decision
+            ↓
+   ┌────────┼──────────┐
+   ↓        ↓          ↓
+ DELIVER  WARN/REVIEW  QUARANTINE
+   ↓        ↓          ↓
+ Inbox   Inbox+Badge  Security Store
 ```
 
-## Analysis Engine
+## 3. Delivery-time security principle
 
-``` text
-Email
- ├─ Body → AI Detection
- ├─ Headers → Forensics → SPF/DKIM/DMARC → Relay → IP
- ├─ URLs → URL/Domain Analysis
- └─ Attachments → Static Analysis
-                         ↓
-                 GeoLocation + TI
-                         ↓
-                    Correlation
-                         ↓
-                 Attribution Support
-                         ↓
-                   Final Risk
+The important architectural change is that **security analysis happens before normal inbox delivery**. The recipient should not first receive an uninspected message and then click an on-demand scan button.
+
+The application therefore models an email-security gateway:
+
+```text
+SMTP-like ingress → MailTrace scanner → decision → mailbox delivery
 ```
 
-## Rules
+For the demo, SMTP can be simulated through an API endpoint or local message generator. A real SMTP/MTA integration can be added later.
 
-1.  Keep Gmail integration separate from analysis modules.
-2.  Analysis must be testable with `.eml` fixtures without Gmail.
-3.  External intelligence is enrichment, not a hard dependency.
-4.  Preserve evidence before modifying/handling the Gmail message.
-5.  Findings should include explainable signals.
-6.  Never claim guaranteed attribution.
-7.  Never execute untrusted attachments in the core prototype.
+## 4. Latency target
 
-## Gmail Integration Boundary
+The prototype should target **near-real-time delivery**, not a long manual scan. Recommended engineering target:
 
-The Gmail integration is an adapter around the analysis engine, not a
-replacement for Gmail's native delivery/spam infrastructure.
+- normal email: approximately **1–3 seconds end-to-end** in the demo environment;
+- lightweight suspicious email: approximately **1–4 seconds**;
+- attachment or external-intelligence-heavy messages may take longer;
+- the UI must show `SCANNING` while analysis is in progress.
 
-``` text
-Gmail receives/accepts message
-        ↓
-Gmail/Workspace event
-        ↓
-Fetch message
-        ↓
-MailTrace analysis
-        ↓
-Risk: SAFE / SUSPICIOUS / MALICIOUS / UNKNOWN
-        ↓
-Supported Gmail action + alert/review
+Do not present these values as a guaranteed SLA for every production deployment. External threat-intelligence services and sandboxing can introduce variable latency.
+
+## 5. Parallel analysis
+
+To achieve delivery-time performance, independent checks should execute concurrently:
+
+```text
+                 Message
+                    ↓
+             Parse / Normalize
+                    ↓
+       ┌────────────┼────────────┐
+       ↓            ↓            ↓
+   Header/Auth    AI/ML       URL/Domain
+       ↓            ↓            ↓
+       └────────────┼────────────┘
+                    ↓
+             Attachment Scan
+                    ↓
+             Correlation/Risk
+                    ↓
+                 Decision
 ```
 
-The core engine must also run against `.eml` fixtures without Gmail.
+Use asynchronous jobs or concurrent workers where appropriate. The final decision waits only for the evidence required by the configured policy.
 
-## Privacy & Governance
+## 6. MailTrace Mail interface
 
-Use scoped OAuth permissions, minimize retained content, protect
-evidence at rest/in transit, maintain audit logs, and define
-retention/deletion rules. Do not expose tokens or sensitive email
-content in logs.
+The frontend remains a Gmail-like **demonstration mailbox**, but the mailbox is downstream of the security gateway.
 
-## Decision Principle
+Screens:
 
-No single signal should force the final verdict. Combine AI,
-authentication, headers, URLs, attachments, infrastructure intelligence,
-GeoLocation context and correlation, while preserving an UNKNOWN state
-when evidence is insufficient.
+- Inbox
+- Sent
+- Drafts
+- Trash
+- Quarantine
+- Search
+- Compose
+- Message detail
+- Security/case view
+
+The inbox should display a message only after the delivery decision is recorded, except when a policy explicitly allows a warning delivery.
+
+## 7. Delivery states
+
+```text
+RECEIVED → SCANNING → DELIVERED
+                    ↘ WARNING
+                    ↘ QUARANTINED
+                    ↘ REJECTED
+                    ↘ FAILED/UNKNOWN
+```
+
+`UNKNOWN` must not automatically mean safe. The configured policy determines whether an unknown result is delivered with a warning, held for review, or temporarily deferred.
+
+## 8. Components
+
+```text
+Frontend
+  ↓
+Mail API / Delivery API
+  ↓
+Ingress Service
+  ↓
+Analysis Orchestrator
+  ├── Parser
+  ├── Header Forensics
+  ├── Authentication Analysis
+  ├── AI/ML Detection
+  ├── URL/Domain Analysis
+  ├── Attachment Analysis
+  ├── Geo/IP Intelligence
+  ├── Threat Intelligence
+  └── Correlation + Risk Engine
+  ↓
+Delivery Policy Engine
+  ↓
+Mailbox / Quarantine / Reject Store
+```
+
+## 9. Security boundary
+
+- No Gmail OAuth is required.
+- No Google database access is claimed.
+- No Gmail SMTP interception is claimed.
+- Attachments are treated as untrusted input.
+- External intelligence is optional and must have timeouts.
+- Evidence is hashed and timestamped.
+- Failed intelligence checks are represented explicitly.

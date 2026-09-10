@@ -1,78 +1,71 @@
-# MailTrace AI --- Testing Strategy
+# MailTrace AI — Delivery-Time Testing
 
-## Core Scenarios
+## 1. Primary acceptance criterion
 
--   legitimate
--   phishing
--   spoofed sender
--   executive impersonation
--   BEC/payment diversion
--   suspicious URL
--   suspicious attachment
--   multi-hop relay
--   missing headers
--   private IP
--   malformed email
--   missing authentication results
--   intelligence outage
--   Gmail API failure
--   duplicate Gmail event
+The key demonstration requirement is:
 
-## Module Tests
+> **An incoming email is analyzed before it appears as a normal delivered message in the recipient inbox.**
 
-### AI
+## 2. Functional tests
 
-Classification, score, model version, false-positive review.
+### Test 1 — Benign email
+1. Submit a benign email to the delivery endpoint.
+2. Verify `RECEIVED → SCANNING`.
+3. Verify the analysis completes.
+4. Verify `SAFE`.
+5. Verify the message appears in Inbox.
 
-### Forensics
+### Test 2 — Phishing email
+1. Submit the seeded phishing message.
+2. Verify analysis occurs before Inbox delivery.
+3. Verify phishing signals are shown.
+4. Verify `MALICIOUS` or configured high-risk classification.
+5. Verify the message is quarantined or rejected according to policy.
 
-Received parsing, relay ordering, SPF/DKIM/DMARC and anomalies.
+### Test 3 — Suspicious email
+Verify that a suspicious message can be delivered with a warning or held for review according to policy.
 
-### GeoLocation
+### Test 4 — Missing intelligence
+Disable an external intelligence provider. Verify the message does not become `SAFE` merely because the lookup failed.
 
-Public IP lookup, private IP handling, unavailable provider.
+### Test 5 — Attachment
+Submit a message with a suspicious attachment. Verify the attachment is inspected safely and the message is not delivered as normal when policy requires quarantine.
 
-### URL/Attachment
+## 3. Performance tests
 
-Extraction, type validation, hashes, suspicious indicators and failure
-handling.
+Measure:
 
-### Correlation
+- parse latency;
+- individual analyzer latency;
+- parallel analysis latency;
+- risk-decision latency;
+- total delivery latency.
 
-Entities, relationships, confidence and rationale.
+For the SIH demo, aim for **approximately 1–3 seconds for typical messages** on the local environment. Test separately with heavy attachments and slow external APIs.
 
-### Gmail
+## 4. Concurrency test
 
-Event handling, fetch, labels/actions, idempotency and permission
-errors.
+Submit multiple messages simultaneously and verify:
 
-## End-to-End
+- delivery IDs remain unique;
+- analyses do not overwrite each other;
+- each message receives its own decision;
+- the mailbox contains only messages permitted by policy.
 
-``` text
-Gmail Event → Fetch → Hash → Parse → AI
-→ Forensics → URL/Attachment → Geo/TI
-→ Correlation → Decision → Gmail Action
-→ Case → Report
+## 5. UI tests
+
+Verify the frontend visibly shows:
+
+```text
+Receiving → Scanning → Decision → Delivery
 ```
 
-Test both legitimate and malicious flows.
+For malicious messages:
 
-## Required Decision-State Tests
+```text
+Receiving → Scanning → MALICIOUS → Quarantined
+```
 
--   clearly benign → SAFE
--   clear phishing/malware indicators → MALICIOUS
--   mixed/ambiguous signals → SUSPICIOUS
--   unavailable/conflicting evidence → UNKNOWN
+## 6. Regression tests
 
-## Alert & Feedback Tests
-
--   high-risk alert is generated
--   suspicious review alert is generated
--   no alert for normal safe mail
--   analyst feedback is stored
--   feedback does not silently change the current verdict
-
-## Gmail Boundary Tests
-
-Verify that the system handles Gmail events asynchronously and does not
-claim or depend on SMTP-level interception.
+Every change to the detection engine must rerun benign, phishing, spoofing, BEC, URL and attachment scenarios.

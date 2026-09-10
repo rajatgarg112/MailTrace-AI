@@ -1,79 +1,115 @@
-# MailTrace AI --- Setup & Team Workflow
+# MailTrace AI — Setup & Team Workflow
 
-## Development Order
+## 1. Development goal
 
-``` text
-1. Freeze Gmail architecture
-2. Freeze common data contract
-3. Prepare sanitized .eml fixtures
-4. Build parser + evidence hashing
-5. Build Gmail ingestion
-6. Build AI detection
-7. Build header forensics
-8. Build URL/attachment analysis
-9. Build GeoLocation + intelligence
-10. Build correlation
-11. Build decision engine
-12. Integrate Gmail actions
-13. Add cases/reporting
-14. End-to-end testing
-15. Optional analyst dashboard
+Build MailTrace as a self-contained email-security gateway with its own demonstration mailbox. No Gmail credentials are required.
+
+## 2. Local services
+
+Recommended development setup:
+
+```text
+Frontend      React + Vite
+Backend       FastAPI
+Database      SQLite (demo)
+               ↓
+            PostgreSQL (production target)
+Analysis      Python modules / ML service
+Reports       ReportLab
 ```
 
-## Team Ownership
+## 3. Running the demo
 
-### AI/Detection
+```text
+Start backend
+      ↓
+Start frontend
+      ↓
+Open MailTrace Mail
+      ↓
+Click “Send Test Email”
+      ↓
+Observe Receiving → Scanning → Decision
+      ↓
+SAFE → Inbox
+MALICIOUS → Quarantine
+```
 
-NLP, TF-IDF, classifier, BEC/phishing/impersonation signals.
+## 4. Team split
 
-### Header/Forensics
+### Frontend
+Build:
 
-Parser, Received chain, SPF/DKIM/DMARC, origin and evidence.
+- MailTrace webmail UI;
+- live delivery status;
+- inbox/quarantine;
+- security verdict card;
+- evidence view.
 
-### Intelligence/Geo
+### Backend / delivery gateway
+Build:
 
-GeoIP, DNS, WHOIS, reputation and URL analysis.
+- delivery endpoint;
+- message persistence;
+- orchestration;
+- policy engine;
+- timing/audit events.
 
-### Attachment/Content
+### AI/ML
+Build:
 
-Attachment metadata, text extraction, OCR where justified and embedded
-URL indicators.
+- NLP classifier;
+- feature extraction;
+- explainable signals;
+- model versioning.
 
-### Backend/Gmail/Integration
+### Forensics / intelligence
+Build:
 
-FastAPI, Gmail integration, orchestration, database, decision engine,
-cases, reporting and integration tests.
+- header parser;
+- SPF/DKIM/DMARC interpretation;
+- URL/domain analysis;
+- attachment inspection;
+- IP/GeoLocation/TI enrichment;
+- correlation.
 
-### Optional Frontend
+### Reporting / QA
+Build:
 
-Analyst dashboard, map and correlation graph.
+- case management;
+- evidence hashes;
+- forensic reports;
+- test fixtures;
+- latency benchmarks.
 
-## Stack
+## 5. Git workflow
 
-FastAPI, Gmail API/Workspace, SQLite, PostgreSQL target, scikit-learn,
-Python `email`, dkimpy, pyspf, dnspython, python-whois, NetworkX,
-ReportLab and Docker.
+Use small feature branches:
 
-Optional React/Vite + Leaflet.
+```text
+main
+ ├── feature/delivery-gateway
+ ├── feature/mail-ui
+ ├── feature/ai-detection
+ ├── feature/header-forensics
+ ├── feature/url-attachment-analysis
+ └── feature/reporting
+```
 
-## Key Rule
+Do not commit secrets, API keys, private mail or real user credentials.
 
-The analysis engine must work independently using `.eml` fixtures. Gmail
-is the integration layer around the core AI/forensic engine.
+## 6. SIH demonstration script
 
-Never commit OAuth secrets, API keys or sensitive raw email evidence.
+1. Open MailTrace Mail.
+2. Click `Send Test Email`.
+3. Show `Receiving`.
+4. Show `Scanning` with parallel analysis stages.
+5. Show the final verdict before the message reaches Inbox.
+6. For a benign email, show `SAFE → Delivered`.
+7. For phishing, show `MALICIOUS → Quarantined`.
+8. Open the security result and evidence.
+9. Show delivery latency and the forensic timeline.
 
-## Final Ownership Rule
+## 7. Product boundary
 
-Gmail integration, OAuth scopes, event handling and Gmail actions belong
-to the integration/backend owner. The analysis modules must remain
-independently testable with `.eml` fixtures.
-
-## Final Security Checklist
-
-Before demo: - OAuth scopes are least-privilege. - No secrets are
-committed. - Raw email/attachments are not written to ordinary logs. -
-Evidence hashes and timestamps are recorded. - Retention/deletion
-behavior is documented. - UNKNOWN is preserved when evidence is
-insufficient. - Gmail is not described as being replaced or intercepted
-at SMTP level.
+The prototype represents the architecture of a **pre-delivery email security gateway**. It does not claim direct access to Gmail's backend or guaranteed control over Gmail delivery. A future deployment can connect the same analysis engine to an authorized mail transport layer.

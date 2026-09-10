@@ -1,80 +1,152 @@
-# MailTrace AI --- Gmail Analysis Pipeline
+# MailTrace AI — Delivery-Time Analysis Pipeline
 
-## Phase 0 --- Integration Freeze
+## 1. Objective
 
-Freeze Gmail integration, FastAPI, data contract, database, module
-interfaces and decision policy.
+MailTrace analyzes an incoming message **inside the delivery path** so that the security verdict is available before normal inbox delivery.
 
-## Phase 1 --- Ingestion & Evidence
+## 2. Pipeline
 
-``` text
-Gmail event → Fetch message → Preserve source → SHA-256 → Parse
+```text
+Incoming Message
+      ↓
+Receive + Preserve
+      ↓
+Parse / Normalize
+      ↓
+Fast Parallel Analysis
+ ┌────┬────┬────┬────┬────┐
+ ↓    ↓    ↓    ↓    ↓    ↓
+AI  Header Auth URL Attach Origin/TI
+ └────┴────┴────┴────┴────┘
+              ↓
+       Correlation Engine
+              ↓
+          Risk Engine
+              ↓
+       Delivery Policy
+              ↓
+ Deliver / Warn / Quarantine / Reject / Hold
 ```
 
-Extract body, headers, URLs, attachments and metadata.
+## 3. Phase 1 — Ingress
 
-## Phase 2 --- AI Detection
+Accept the message through:
 
-Detect phishing, fraud, impersonation, BEC, credential harvesting and
-social engineering.
+- simulated SMTP delivery;
+- REST delivery endpoint; or
+- `.eml` import for testing.
 
-Baseline: TF-IDF + Logistic Regression/SVM.
+Immediately generate a `delivery_id`, capture the raw source, calculate SHA-256, and timestamp receipt.
 
-## Phase 3 --- Header Forensics
+## 4. Phase 2 — Fast parsing
 
-Analyze Return-Path, Received, Message-ID, Reply-To, SPF, DKIM, DMARC,
-timestamps and routing anomalies.
+Extract:
 
-Reconstruct the observable relay chain.
+- headers;
+- sender/recipient;
+- body;
+- URLs;
+- attachments;
+- message timestamps;
+- relay information.
 
-## Phase 4 --- Origin, GeoLocation & Intelligence
+Parsing must be lightweight enough to start downstream analyzers quickly.
 
-``` text
-Relay Chain → Earliest Reliable Observed IP
-→ GeoIP → DNS/WHOIS → Reputation → VPN/TOR/Hosting indicators
-```
+## 5. Phase 3 — Parallel security analysis
 
-Also analyze URLs and attachments.
+### AI/NLP
+Detect:
 
-## Phase 5 --- Correlation & Attribution Support
+- phishing language;
+- credential requests;
+- financial fraud;
+- impersonation;
+- BEC/payment diversion;
+- social engineering.
+
+### Header forensics
+Inspect:
+
+- Received chain;
+- Return-Path;
+- Message-ID;
+- Reply-To;
+- timestamp anomalies;
+- sender/domain mismatches.
+
+### Authentication
+When evidence is available, analyze SPF, DKIM and DMARC. Missing evidence must remain `UNKNOWN` rather than being treated as failure or success.
+
+### URLs and domains
+Check:
+
+- URL structure;
+- domain reputation;
+- redirects where safely supported;
+- domain age/reputation signals;
+- known malicious indicators.
+
+### Attachments
+Perform safe static inspection:
+
+- file type;
+- extension mismatch;
+- hash;
+- macro/script indicators;
+- archive characteristics;
+- malware reputation where available.
+
+Never execute an untrusted attachment directly in the application server.
+
+### Origin / GeoLocation / intelligence
+Use observable relay/IP data to enrich the investigation. GeoLocation is evidence about infrastructure and is not proof of a person's physical location.
+
+## 6. Phase 4 — Correlation
 
 Correlate:
 
-``` text
-Sender ↔ Domain ↔ IP ↔ URL ↔ Attachment ↔ Case
+```text
+Sender ↔ Domain ↔ IP ↔ URL ↔ Attachment ↔ Prior Cases
 ```
 
-Produce confidence-based investigative findings.
+The correlation engine produces explainable relationships and confidence values.
 
-## Phase 6 --- Decision & Gmail Action
+## 7. Phase 5 — Risk and delivery decision
 
-``` text
-All Evidence → Final Risk → Safe/Suspicious/Malicious
-→ Gmail Action → Case → Report
+```text
+Evidence
+   ↓
+Risk Score
+   ↓
+Classification
+   ↓
+Policy
+   ├── SAFE → DELIVER
+   ├── SUSPICIOUS → WARN / HOLD
+   ├── MALICIOUS → QUARANTINE / REJECT
+   └── UNKNOWN → HOLD / WARN / DELIVER BY POLICY
 ```
 
-Medium-risk messages should normally go to review rather than
-automatically being treated as malicious.
+## 8. Performance design
 
-## Decision States
+The delivery path should avoid unnecessary sequential calls.
 
-The final engine returns four states:
+Recommended approach:
 
--   SAFE --- sufficient benign evidence.
--   SUSPICIOUS --- meaningful risk or conflicting signals; review/alert.
--   MALICIOUS --- strong malicious evidence; supported quarantine/label
-    workflow.
--   UNKNOWN --- insufficient, unavailable or conflicting evidence; do
-    not force a binary claim.
+1. Parse once.
+2. Run independent checks concurrently.
+3. Cache reputation/intelligence where safe.
+4. Apply strict timeouts to external services.
+5. Use a fast path for clearly benign messages.
+6. Use deeper analysis for high-risk or ambiguous messages.
 
-## Alert & Feedback
+Target demo latency: approximately **1–3 seconds for typical messages**, with a visible `SCANNING` state. Heavier attachments or external sandboxing may exceed this target.
 
-High-risk and suspicious cases can generate alerts. Analyst/user
-feedback is recorded for evaluation, audit and future model improvement.
+## 9. Fail-safe behavior
 
-## Gmail Timing Boundary
+If an analyzer times out:
 
-The prototype should describe Gmail integration as event-driven
-processing after Gmail has accepted/received the message. A Gmail add-on
-should not be described as an SMTP interception layer or guaranteed
-pre-delivery blocker.
+- record the failure;
+- preserve the evidence;
+- do not silently convert missing evidence into `SAFE`;
+- let the delivery policy decide whether to warn, hold, or quarantine.

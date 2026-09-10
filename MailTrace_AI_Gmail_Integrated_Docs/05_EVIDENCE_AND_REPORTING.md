@@ -1,48 +1,82 @@
-# MailTrace AI --- Evidence & Forensic Reporting
+# MailTrace AI — Evidence, Audit & Reporting
 
-## Evidence Lifecycle
+## 1. Evidence lifecycle
 
-``` text
-Gmail Message → Raw Source → SHA-256 → Evidence ID
-→ Analysis → Findings → Case → Report
+```text
+Message Received
+      ↓
+Raw Source Hash
+      ↓
+Analysis Findings
+      ↓
+Risk Decision
+      ↓
+Delivery Action
+      ↓
+Case / Report
 ```
 
-Preserve, where permitted: - raw email - headers - URLs - attachment
-metadata/hashes - IP observations - DNS/WHOIS - reputation results - AI
-signals - correlation findings - Gmail action history
+## 2. Evidence captured before delivery
 
-## Report
+Capture, where available:
 
-Include: 1. Case details 2. Email summary 3. AI detection 4.
-SPF/DKIM/DMARC 5. Relay path 6. Earliest reliable observed IP 7.
-GeoLocation 8. IP/domain intelligence 9. URLs 10. Attachments 11.
-Correlation 12. Attribution support 13. Decision/Gmail action 14.
-Evidence hashes 15. Limitations 16. Timestamps
+- raw message hash;
+- receipt timestamp;
+- sender and recipient metadata;
+- relevant headers;
+- URLs;
+- attachment hashes and metadata;
+- analyzer results;
+- external intelligence references;
+- decision and policy version;
+- delivery timing.
 
-Use **Integrity-verifiable forensic report**.
+## 3. Forensic report
 
-Clearly separate observed evidence, inferred relationships, confidence
-and investigative hypotheses. A network IP/geolocation result is not
-proof of a person's identity or physical location.
+A report should contain:
 
-## Chain of Custody
+1. Case summary
+2. Message identity
+3. Delivery timeline
+4. Header/authentication findings
+5. AI/ML findings
+6. URL/domain findings
+7. Attachment findings
+8. Origin/GeoLocation evidence
+9. Infrastructure correlation
+10. Final risk classification
+11. Delivery action
+12. Evidence hashes
+13. Limitations and confidence
 
-For each retained evidence item, record:
+## 4. Delivery timeline example
 
-1.  capture/ingestion timestamp
-2.  SHA-256 hash
-3.  evidence ID
-4.  source/message reference
-5.  analysis actions
-6.  analyst/system access where applicable
-7.  final report reference
-8.  retention/deletion status
+```text
+10:20:01.100  Message received
+10:20:01.120  Parsing started
+10:20:01.300  AI/header checks running
+10:20:02.050  URL reputation returned
+10:20:02.220  Correlation complete
+10:20:02.280  MALICIOUS decision
+10:20:02.290  Message quarantined
+```
 
-This creates an auditable evidence trail. It does not make a PDF or
-database mathematically "tamper-proof".
+The exact values are generated from the application timestamps; they should not be hard-coded in production.
 
-## Privacy & Retention
+## 5. Audit events
 
-Retain only data required for the investigation. Protect raw messages
-and attachments, restrict access, avoid sensitive data in logs, and
-apply defined retention/deletion rules.
+Record security-relevant events such as:
+
+- message received;
+- analysis started/completed;
+- finding generated;
+- delivery decision made;
+- message delivered;
+- message quarantined;
+- quarantine released;
+- case created;
+- report generated.
+
+## 6. Attribution limitation
+
+MailTrace may provide infrastructure intelligence and investigative clues. An IP address, GeoLocation result, domain or hosting provider must not be represented as proof of an individual's identity.

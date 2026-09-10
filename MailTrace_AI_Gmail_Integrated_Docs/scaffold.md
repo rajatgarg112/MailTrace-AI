@@ -1,89 +1,147 @@
-# MailTrace AI --- Gmail-Integrated AI Email Threat Detection, GeoLocation & Forensic Intelligence Platform
+# MailTrace AI — Pre-Delivery Email Security Gateway Scaffold
 
-## 1. Product Definition
+## 1. Product definition
 
-MailTrace AI is not primarily a standalone email-analysis website. It is
-a Gmail-integrated security and forensic intelligence tool whose core
-engine automatically analyzes incoming emails, URLs, attachments,
-headers, sender infrastructure, and related indicators.
+MailTrace AI is a **pre-delivery email security gateway** with its own webmail-style recipient interface.
 
-### Core pillars
+The prototype simulates the path an email follows before reaching a user's inbox:
 
-1.  AI-Powered Email Threat Detection
-2.  GeoLocation & Origin Analysis
-3.  Email Forensics
-4.  Threat Intelligence & Infrastructure Correlation
-5.  Attribution Support & Investigative Intelligence
-6.  Evidence Preservation & Forensic Reporting
-7.  Gmail Integration & Automated Mail Handling
-
-An analyst dashboard can be added later, but it is optional and
-secondary.
-
-## 2. Primary Product Flow
-
-``` text
-GMAIL / GOOGLE WORKSPACE
-  ↓
-Gmail Integration / Mailbox Event
-  ↓
-Fetch Message
-  ↓
-Email Ingestion
-  ↓
-Evidence Preservation (SHA-256 + timestamp)
-  ↓
-Email Parser
-  ↓
-┌──────────────┬───────────────┬──────────────┐
-│ BODY         │ HEADERS       │ ATTACHMENTS  │
-│ ↓            │ ↓             │ ↓            │
-│ AI Detection │ Forensics     │ File Analysis│
-└──────┬───────┴───────┬───────┴──────┬───────┘
-       │               │              │
-       └───────────────┼──────────────┘
-                       ↓
-                  URL Analysis
-                       ↓
-             Relay Reconstruction
-                       ↓
-          Earliest Reliable Observed IP
-                       ↓
-                  GeoLocation
-                       ↓
-             DNS / WHOIS / Reputation
-                       ↓
-              Threat Intelligence
-                       ↓
-             Graph-Based Correlation
-                       ↓
-               Attribution Support
-                       ↓
-                 Final Risk Engine
-                       ↓
-             ┌──────────┼──────────┬──────────┐
-             ↓          ↓          ↓          ↓
-           SAFE     SUSPICIOUS  MALICIOUS   UNKNOWN
-             ↓          ↓          ↓          ↓
-        Normal       Review +   Quarantine/  Review/
-        Handling       Alert       Label     No forced claim
-                       ↓
-                Forensic Case
-                       ↓
-          Integrity-Verifiable Report
+```text
+Incoming Message
+      ↓
+MailTrace Ingress
+      ↓
+Scan / Analyze
+      ↓
+Risk + Policy Decision
+      ↓
+Inbox / Warning / Quarantine / Reject / Hold
 ```
 
-## 3. Repository Structure
+The system does not require Gmail access. The MailTrace application owns the mailbox and simulates the incoming mail transport for demonstration.
 
-``` text
+## 2. Primary product flow
+
+```text
+                   INCOMING EMAIL
+                         │
+                         ▼
+                  MAILTRACE INGRESS
+                         │
+                         ▼
+                EVIDENCE PRESERVATION
+                  SHA-256 + timestamp
+                         │
+                         ▼
+                    FAST PARSER
+                         │
+          ┌──────────────┼───────────────┐
+          ▼              ▼               ▼
+       HEADERS          BODY         FILES/URLS
+          │              │               │
+          ▼              ▼               ▼
+       FORENSICS       AI/ML       URL + ATTACHMENT
+          │              │               │
+          └──────────────┼───────────────┘
+                         ▼
+                GEO/IP + THREAT INTEL
+                         ▼
+                    CORRELATION
+                         ▼
+                    RISK ENGINE
+                         ▼
+                 DELIVERY POLICY
+             ┌───────────┼───────────┐
+             ▼           ▼           ▼
+          DELIVER       WARN     QUARANTINE
+             │           │           │
+             ▼           ▼           ▼
+           INBOX     INBOX+BADGE  SECURITY STORE
+                         │
+                         ▼
+                 CASE / FORENSIC REPORT
+```
+
+## 3. Performance-first architecture
+
+The system should be designed for **near-real-time delivery**. Independent checks run concurrently rather than as a long sequential chain.
+
+Recommended target for the SIH prototype:
+
+> **Typical email: approximately 1–3 seconds from receipt to final delivery decision.**
+
+Large attachments, deep URL analysis, external threat-intelligence services or sandboxing can take longer. The UI must never fake a fixed scan duration; it should display actual status/timing from the backend.
+
+## 4. MailTrace interface
+
+```text
+MailTrace Mail
+├── Inbox
+├── Starred
+├── Sent
+├── Drafts
+├── Trash
+├── Quarantine
+└── Search
+```
+
+The inbox receives only messages that pass the delivery policy.
+
+For a new incoming message, the UI can show a delivery activity panel:
+
+```text
+Incoming message from alice@example.com
+
+✓ Received
+✓ Parsed
+✓ Header analysis
+✓ AI analysis
+✓ URL analysis
+✓ Correlation
+✓ Decision: SAFE
+
+Delivered to Inbox — 1.42 s
+```
+
+For a malicious message:
+
+```text
+Incoming message from suspicious@example.com
+
+✓ Received
+✓ Parsed
+✓ Header analysis
+✓ AI analysis
+✓ URL analysis
+✓ Correlation
+⚠ Decision: MALICIOUS
+
+Quarantined — 1.87 s
+```
+
+## 5. Repository structure
+
+```text
 mailtrace-ai/
 ├── backend/
 │   ├── app/
 │   │   ├── main.py
 │   │   ├── api/
+│   │   │   ├── deliveries.py
+│   │   │   ├── mailbox.py
+│   │   │   ├── messages.py
+│   │   │   ├── quarantine.py
+│   │   │   ├── cases.py
+│   │   │   └── reports.py
 │   │   ├── models/
 │   │   ├── schemas/
 │   │   ├── services/
+│   │   │   ├── ingress_service.py
+│   │   │   ├── delivery_service.py
+│   │   │   ├── analysis_orchestrator.py
+│   │   │   ├── policy_service.py
+│   │   │   ├── case_service.py
+│   │   │   └── report_service.py
 │   │   └── core/
 │   ├── analysis/
 │   │   ├── parser.py
@@ -99,272 +157,47 @@ mailtrace-ai/
 │   │   ├── correlation.py
 │   │   └── decision_engine.py
 │   ├── integrations/
-│   │   └── gmail/
+│   │   └── future_mail_transport/
 │   ├── reporting/
 │   │   └── forensic_report.py
 │   └── tests/
 ├── frontend/
-│   └── optional-analyst-dashboard/
+│   └── mailtrace-mail/
+│       ├── src/
+│       │   ├── pages/
+│       │   ├── components/
+│       │   ├── services/
+│       │   └── data/
+│       └── package.json
 ├── data/
-├── docs/
-└── docker-compose.yml
+│   ├── demo/
+│   └── uploads/
 ```
 
-## 4. Module → Phase
+## 6. Delivery states
 
-  ---------------------------------------------------------------------------
-  Module                  Phase                   Responsibility
-  ----------------------- ----------------------- ---------------------------
-  Gmail integration       0--1                    Receive mailbox events and
-                                                  apply supported actions
-
-  Parser                  1                       Extract message, headers,
-                                                  URLs, attachments
-
-  Evidence                1                       Preserve source and
-                                                  calculate SHA-256
-
-  Detection               2                       AI/NLP threat
-                                                  classification
-
-  Header forensics        3                       Technical header/routing
-                                                  analysis
-
-  Authentication          3                       SPF/DKIM/DMARC
-
-  Origin                  3                       Relay reconstruction and
-                                                  earliest reliable observed
-                                                  IP
-
-  GeoLocation             4                       Approximate IP/network
-                                                  location
-
-  URL analysis            4                       URL/domain risk analysis
-
-  Attachment analysis     4                       Static file analysis
-
-  Domain intelligence     4                       DNS/WHOIS/infrastructure
-
-  Reputation              4                       Threat intelligence
-
-  Correlation             5                       Sender/domain/IP/URL/case
-                                                  relationships
-
-  Attribution support     5                       Confidence-based
-                                                  investigative findings
-
-  Decision engine         6                       Final risk and Gmail action
-
-  Case/reporting          6                       Case storage and forensic
-                                                  report
-  ---------------------------------------------------------------------------
-
-## 5. AI Detection
-
-Analyze subject, body, urgency, impersonation, social engineering,
-phishing, BEC/payment diversion, credential harvesting, sender/domain
-signals, URLs and attachment signals.
-
-Baseline:
-
-``` text
-TF-IDF → Logistic Regression / SVM
+```text
+RECEIVED
+  ↓
+SCANNING
+  ↓
+DECIDING
+  ├── DELIVERED
+  ├── WARNING
+  ├── QUARANTINED
+  ├── REJECTED
+  └── HOLD
 ```
 
-Transformer/BERT is a stretch feature. AI is one evidence stream, not
-the sole proof of maliciousness.
+## 7. Core pillars
 
-## 6. Forensics
-
-Analyze Return-Path, Received, Message-ID, Reply-To, sender fields, SPF,
-DKIM, DMARC, timestamps and routing anomalies.
-
-Preserve original evidence and record rationale for important findings.
-
-## 7. Origin & GeoLocation
-
-Reconstruct the observable relay chain and identify the **Earliest
-Reliable Observed IP**.
-
-Do not claim a guaranteed attacker IP, physical location, or attacker's
-machine.
-
-GeoLocation can provide country, region, city, ISP/ASN and hosting
-information, with VPN/TOR/proxy indicators where available.
-
-## 8. URLs & Attachments
-
-Analyze URLs for structure, obfuscation, domain, DNS, redirects where
-safely available, age and reputation.
-
-Analyze common PDF, PPT/PPTX, DOC/DOCX, XLS/XLSX, image, ZIP/archive,
-HTML/text and suspicious file types using static indicators such as
-filename, extension, MIME, size, SHA-256, metadata, extracted text and
-embedded URLs.
-
-Do not execute untrusted attachments in the prototype.
-
-## 9. Correlation & Attribution Support
-
-``` text
-Sender ↔ Domain ↔ IP ↔ URL ↔ Attachment ↔ Case
-```
-
-Use graph relationships, confidence and rationale to identify related
-infrastructure/campaign patterns.
-
-Attribution is investigative support, not guaranteed person-level
-identification.
-
-## 10. Final Decision
-
-The final decision is multi-signal. AI is one evidence stream and must
-not be the sole proof of maliciousness.
-
-``` text
-AI + Forensics + Authentication + URL + Attachment
-+ IP/Domain Intelligence + GeoLocation + Correlation
-                     ↓
-              Final Risk Assessment
-                     ↓
-       SAFE / SUSPICIOUS / MALICIOUS / UNKNOWN
-```
-
-Conceptual policy:
-
-``` text
-LOW / strong benign evidence → SAFE
-MEDIUM / conflicting evidence → SUSPICIOUS
-HIGH / strong malicious evidence → MALICIOUS
-Insufficient or unavailable evidence → UNKNOWN
-```
-
-Thresholds must be calibrated with testing. UNKNOWN must not be silently
-converted into SAFE or MALICIOUS.
-
-## 11. Gmail Actions
-
-``` text
-SAFE       → Normal Gmail handling
-SUSPICIOUS → MailTrace Review label + Alert
-MALICIOUS  → Supported quarantine / label workflow + Alert
-UNKNOWN    → Review label / no forced malicious action
-```
-
-MailTrace does not replace Gmail's native spam classifier or sit inside
-Gmail's SMTP delivery path. The prototype observes/receives supported
-Gmail/Workspace events, analyzes the message, and then applies only
-supported Gmail actions using scoped permissions. Organization-level
-mail routing/gateway controls may be required for true pre-delivery
-blocking.
-
-## 12. Evidence & Reporting
-
-Forensics runs throughout the pipeline; the PDF is only one final
-presentation of the evidence.
-
-``` text
-Evidence Captured
-      ↓
-SHA-256 + Timestamp + Evidence ID
-      ↓
-Immutable/controlled evidence record
-      ↓
-Analysis + Findings + Actions logged
-      ↓
-Chain-of-custody / audit trail
-      ↓
-Case
-      ↓
-Integrity-verifiable forensic report
-```
-
-Report sections include email summary, AI findings, authentication,
-relay path, earliest reliable IP, GeoLocation, infrastructure
-intelligence, URLs, attachments, correlation, attribution support,
-evidence hashes, action history, limitations and timestamps.
-
-Use the term **Integrity-verifiable forensic report**, not "tamper-proof
-PDF".
-
-## 13. Privacy, Compliance & Evidence Governance
-
--   Use least-privilege Gmail/OAuth scopes.
--   Minimize retained email content and retain only what the case
-    requires.
--   Protect raw email and attachment evidence in transit and at rest.
--   Record evidence access and analysis actions in an audit trail.
--   Define retention/deletion rules for stored messages, attachments and
-    reports.
--   Mask sensitive fields in analyst views where practical.
--   Never expose Gmail OAuth tokens, API keys or raw evidence in logs.
--   Treat forensic output as investigation support, not automatic legal
-    attribution.
-
-## 14. Technology Stack
-
--   Python
--   FastAPI
--   Gmail API / Google Workspace integration
--   SQLite
--   PostgreSQL deployment target
--   scikit-learn
--   Python `email`
--   dkimpy
--   pyspf
--   MaxMind GeoLite2 or IPinfo
--   dnspython
--   python-whois
--   AbuseIPDB / OTX where available
--   NetworkX
--   ReportLab
--   Docker / Docker Compose
--   Optional: React + Vite, Leaflet for analyst dashboard
-
-## 14. API Surface
-
-``` text
-POST /gmail/events
-POST /email/analyze
-GET  /cases
-POST /cases
-GET  /cases/{case_id}
-GET  /reports/{case_id}
-```
-
-## 15. Testing
-
-Test legitimate, phishing, spoofing, impersonation, BEC, suspicious
-URLs/attachments, multi-hop relay, missing headers, private IPs,
-malformed email, missing authentication, intelligence outages, Gmail API
-failures and duplicate events.
-
-End-to-end:
-
-``` text
-Gmail Event → Fetch → Hash → Parse → Analyze → Correlate
-→ Decide → Gmail Action → Case → Report
-```
-
-## 16. Definition of Done
-
-The prototype is complete when Gmail ingestion, evidence hashing,
-message/URL/attachment extraction, AI detection, SPF/DKIM/DMARC, relay
-reconstruction, earliest reliable IP, GeoLocation/intelligence,
-URL/attachment analysis, correlation, attribution-support findings,
-final risk, Gmail action, case storage and integrity-verifiable
-reporting all work and are tested.
-
-## 17. Scope Boundaries
-
-Do not claim guaranteed attacker identity, guaranteed physical location,
-guaranteed originating machine, full malware sandboxing, replacement of
-Gmail's spam infrastructure, perfect detection, production-scale threat
-intelligence, or blockchain merely for branding.
-
-### Core Value Proposition
-
-> Detect the threat, inspect the complete email, reconstruct observable
-> infrastructure, estimate geographic context, correlate related
-> indicators, support investigation, preserve evidence, and take an
-> appropriate Gmail action.
+1. Pre-delivery AI threat detection
+2. Email/header forensics
+3. GeoLocation & origin intelligence
+4. URL and attachment analysis
+5. Threat intelligence
+6. Infrastructure correlation
+7. Evidence preservation
+8. Forensic reporting
+9. Delivery-time latency measurement
+10. Standalone mail interface
