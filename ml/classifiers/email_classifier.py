@@ -11,8 +11,7 @@ from .schemas import (
     MLPredictionResult
 )
 from ..preprocessing.email_preprocessor import EmailPreprocessor
-from ..features.text_features import TextFeatureExtractor
-from ..features.keyword_features import KeywordFeatureExtractor
+from ..features.composite_extractor import EmailFeatureExtractor
 from ..models.placeholder_model import PlaceholderModel
 from ..models.base import BaseModel
 from ..config.ml_config import MLConfig
@@ -21,7 +20,7 @@ from ..config.ml_config import MLConfig
 class EmailClassifier(BaseClassifier):
     """
     Main Classifier implementation for Phase 1.
-    Integrates Preprocessor + Text/Keyword Feature Extractors + Model.
+    Integrates Preprocessor + EmailFeatureExtractor + Model.
     Produces verdicts across all 5 required signal categories:
     1. Phishing classification
     2. Suspicious-language detection
@@ -33,29 +32,27 @@ class EmailClassifier(BaseClassifier):
     def __init__(
         self,
         config: Optional[MLConfig] = None,
-        model: Optional[BaseModel] = None
+        model: Optional[BaseModel] = None,
+        feature_extractor: Optional[EmailFeatureExtractor] = None
     ):
         self.config = config or MLConfig()
         self.preprocessor = EmailPreprocessor()
-        self.text_extractor = TextFeatureExtractor()
-        self.keyword_extractor = KeywordFeatureExtractor()
+        self.feature_extractor = feature_extractor or EmailFeatureExtractor()
         self.model = model or PlaceholderModel(config=self.config.model)
 
     def classify(self, email_input: Any) -> MLPredictionResult:
         # Step 1: Preprocessing
         processed = self.preprocessor.preprocess(email_input)
 
-        # Step 2: Feature Extraction
-        text_vec = self.text_extractor.extract(processed)
-        keyword_vec = self.keyword_extractor.extract(processed)
+        # Step 2: Unified Feature Extraction
+        feature_vector = self.feature_extractor.extract(processed)
 
-        # Merge feature maps
-        merged_signals = keyword_vec.signal_counts
-        merged_numerics = {**text_vec.numerical_features, **keyword_vec.numerical_features}
-        merged_booleans = {**text_vec.boolean_features, **keyword_vec.boolean_features}
+        merged_signals = feature_vector.signal_counts
+        merged_numerics = feature_vector.numerical_features
+        merged_booleans = feature_vector.boolean_features
 
         # Step 3: Model Probability Prediction
-        probabilities = self.model.predict_proba(keyword_vec)
+        probabilities = self.model.predict_proba(feature_vector)
         malicious_p = probabilities.get("malicious", 0.0)
         suspicious_p = probabilities.get("suspicious", 0.0)
 
@@ -97,7 +94,7 @@ class EmailClassifier(BaseClassifier):
             signals=active_signals,
             metadata={
                 "url_count": processed.metadata.get("url_count", 0),
-                "word_count": text_vec.numerical_features.get("word_count", 0),
+                "word_count": feature_vector.numerical_features.get("body_word_count", feature_vector.numerical_features.get("word_count", 0)),
                 "has_html": processed.metadata.get("has_html", False)
             }
         )
@@ -117,8 +114,8 @@ class EmailClassifier(BaseClassifier):
 
     def _evaluate_suspicious_language(self, signals: Dict[str, int], numerics: Dict[str, float], score_s: float) -> SignalVerdict:
         urgency = signals.get("urgency_count", 0)
-        upper_ratio = numerics.get("uppercase_ratio", 0.0)
-        exclamations = numerics.get("exclamation_count", 0.0)
+        upper_ratio = numerics.get("body_uppercase_ratio", numerics.get("uppercase_ratio", 0.0))
+        exclamations = numerics.get("body_exclamation_count", numerics.get("exclamation_count", 0.0))
 
         detected = urgency > 0 or upper_ratio > 0.25 or exclamations >= 3
         score = min(1.0, urgency * 0.3 + upper_ratio * 0.8 + (exclamations * 0.1))

@@ -45,7 +45,7 @@ class PlaceholderModel(BaseModel):
         imp_c = signal_counts.get("impersonation_count", 0)
 
         num_urls = num_features.get("num_urls", 0.0)
-        upper_ratio = num_features.get("uppercase_ratio", 0.0)
+        upper_ratio = num_features.get("body_uppercase_ratio", num_features.get("uppercase_ratio", 0.0))
 
         score = 0.0
         score += phish_c * 0.35

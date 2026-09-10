@@ -16,6 +16,7 @@ from ..preprocessing.base import ProcessedEmail
 class KeywordFeatureExtractor(BaseFeatureExtractor):
     """
     Scans text for security threat indicators and suspicious semantic patterns.
+    Outputs deterministic keyword signal counts and keyword density ratios.
     """
 
     KEYWORD_BANK: Dict[str, Set[str]] = {
@@ -45,27 +46,35 @@ class KeywordFeatureExtractor(BaseFeatureExtractor):
     }
 
     def extract(self, processed_email: ProcessedEmail) -> FeatureVector:
-        text = processed_email.combined_text.lower()
+        text = (processed_email.combined_text or "").lower()
+        token_count = max(len(processed_email.tokens), 1)
 
         signal_counts: Dict[str, int] = {}
         numerical: Dict[str, float] = {}
         booleans: Dict[str, bool] = {}
 
+        total_matches = 0
         for category, keywords in self.KEYWORD_BANK.items():
             matches = 0
             for kw in keywords:
                 if kw in text:
                     matches += 1
+            total_matches += matches
             signal_counts[f"{category}_count"] = matches
-            numerical[f"{category}_density"] = round(matches / max(len(processed_email.tokens), 1), 4)
+            numerical[f"{category}_density"] = round(matches / token_count, 4)
             booleans[f"has_{category}_keywords"] = matches > 0
 
-        raw_vec = [float(v) for v in signal_counts.values()] + list(numerical.values())
+        # Combined pressure score (sum of matches normalized)
+        combined_pressure_score = round(min(1.0, total_matches * 0.15), 4)
+        numerical["combined_threat_pressure_score"] = combined_pressure_score
+
+        feature_names = list(signal_counts.keys()) + list(numerical.keys()) + list(booleans.keys())
+        raw_vec = [float(v) for v in signal_counts.values()] + list(numerical.values()) + [1.0 if v else 0.0 for v in booleans.values()]
 
         return FeatureVector(
             numerical_features=numerical,
             boolean_features=booleans,
             signal_counts=signal_counts,
-            feature_names=list(signal_counts.keys()) + list(numerical.keys()),
+            feature_names=feature_names,
             raw_vector=raw_vec
         )
