@@ -17,7 +17,7 @@ class BaseModel(ABC):
     @abstractmethod
     def predict(self, feature_vector: FeatureVector) -> int:
         """
-        Predict binary or multi-class class label (0=Safe, 1=Suspicious/Malicious).
+        Predict binary or multi-class class label index (0=Benign, 1=Suspicious, 2=Phishing).
         """
         pass
 
@@ -25,9 +25,16 @@ class BaseModel(ABC):
     def predict_proba(self, feature_vector: FeatureVector) -> Dict[str, float]:
         """
         Predict probability distribution across target categories/classes.
-        Returns e.g. {"safe": 0.1, "suspicious": 0.3, "malicious": 0.6}
+        Returns e.g. {"benign": 0.1, "suspicious": 0.3, "phishing": 0.6}
         """
         pass
+
+    def is_placeholder(self) -> bool:
+        """
+        Returns True if this model is a mock/placeholder implementation.
+        Trained production models should return False.
+        """
+        return False
 
     @abstractmethod
     def save(self, filepath: str) -> bool:

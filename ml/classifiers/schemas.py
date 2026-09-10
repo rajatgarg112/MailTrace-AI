@@ -14,6 +14,54 @@ class ClassificationCategory(str, Enum):
     UNKNOWN = "UNKNOWN"
 
 
+class ClassifierLabel(str, Enum):
+    PHISHING = "phishing"
+    SUSPICIOUS = "suspicious"
+    BENIGN = "benign"
+    UNKNOWN = "unknown"
+
+
+@dataclass
+class ClassifierOutput:
+    """
+    Standardized, serializable output model for ML classifiers.
+    Format:
+    {
+        "label": "phishing | suspicious | benign | unknown",
+        "confidence": 0.85,
+        "signals": ["High urgency pressure detected", "Credential harvesting cues present"]
+    }
+    """
+    label: str
+    confidence: float
+    signals: List[str] = field(default_factory=list)
+    model_version: str = "mock-v1.0.0-phase1"
+    is_placeholder: bool = True
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self):
+        """Validate label enum and confidence bounds [0.0, 1.0]."""
+        # Validate confidence score bounds
+        if not (0.0 <= self.confidence <= 1.0):
+            raise ValueError(f"Confidence score must be between 0.0 and 1.0, got {self.confidence}")
+
+        # Normalize label string if valid
+        valid_labels = {item.value for item in ClassifierLabel}
+        if self.label.lower() in valid_labels:
+            self.label = self.label.lower()
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert ClassifierOutput to serializable dictionary."""
+        return {
+            "label": self.label,
+            "confidence": round(self.confidence, 4),
+            "signals": self.signals,
+            "model_version": self.model_version,
+            "is_placeholder": self.is_placeholder,
+            "metadata": self.metadata
+        }
+
+
 @dataclass
 class SignalVerdict:
     """Individual security threat signal breakdown."""

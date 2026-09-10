@@ -7,6 +7,8 @@ from typing import Any, Dict, List, Optional
 from .base import BaseClassifier
 from .schemas import (
     ClassificationCategory,
+    ClassifierLabel,
+    ClassifierOutput,
     SignalVerdict,
     MLPredictionResult
 )
@@ -39,6 +41,25 @@ class EmailClassifier(BaseClassifier):
         self.preprocessor = EmailPreprocessor()
         self.feature_extractor = feature_extractor or EmailFeatureExtractor()
         self.model = model or PlaceholderModel(config=self.config.model)
+
+    def predict_verdict(self, email_input: Any) -> ClassifierOutput:
+        """Returns standardized ClassifierOutput dictionary representation."""
+        result = self.classify(email_input)
+        label_map = {
+            ClassificationCategory.MALICIOUS.value: ClassifierLabel.PHISHING.value,
+            ClassificationCategory.SUSPICIOUS.value: ClassifierLabel.SUSPICIOUS.value,
+            ClassificationCategory.SAFE.value: ClassifierLabel.BENIGN.value,
+            ClassificationCategory.UNKNOWN.value: ClassifierLabel.UNKNOWN.value
+        }
+        mapped_label = label_map.get(result.classification, ClassifierLabel.UNKNOWN.value)
+        return ClassifierOutput(
+            label=mapped_label,
+            confidence=round(min(max(result.confidence, 0.0), 1.0), 4),
+            signals=result.signals or ["No overt threat indicators detected."],
+            model_version=result.model_version,
+            is_placeholder=self.model.is_placeholder(),
+            metadata=result.metadata
+        )
 
     def classify(self, email_input: Any) -> MLPredictionResult:
         # Step 1: Preprocessing
