@@ -1,1 +1,0 @@
-# MailTrace AI Backend Application

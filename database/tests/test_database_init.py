@@ -35,9 +35,9 @@ def test_alembic_migration_upgrade_head(tmp_path):
     db_url = f"sqlite:///{db_file.as_posix()}"
 
     # Prepare Alembic configuration
-    backend_dir = os.path.realpath(os.path.join(os.path.dirname(__file__), ".."))
-    alembic_cfg = Config(os.path.join(backend_dir, "alembic.ini"))
-    alembic_cfg.set_main_option("script_location", os.path.join(backend_dir, "alembic"))
+    database_dir = os.path.realpath(os.path.join(os.path.dirname(__file__), ".."))
+    alembic_cfg = Config(os.path.join(database_dir, "alembic.ini"))
+    alembic_cfg.set_main_option("script_location", os.path.join(database_dir, "alembic"))
     alembic_cfg.set_main_option("sqlalchemy.url", db_url)
 
     # Run upgrade head

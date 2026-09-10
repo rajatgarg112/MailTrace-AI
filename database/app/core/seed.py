@@ -3,10 +3,10 @@ import sys
 import json
 from datetime import datetime, timezone, timedelta
 
-# Ensure backend directory is in sys.path when executed directly as CLI script
-backend_dir = os.path.realpath(os.path.join(os.path.dirname(__file__), "..", ".."))
-if backend_dir not in sys.path:
-    sys.path.insert(0, backend_dir)
+# Ensure database directory is in sys.path when executed directly as CLI script
+database_dir = os.path.realpath(os.path.join(os.path.dirname(__file__), "..", ".."))
+if database_dir not in sys.path:
+    sys.path.insert(0, database_dir)
 
 from app.core.database import SessionLocal, engine, Base
 from app.models.user import User

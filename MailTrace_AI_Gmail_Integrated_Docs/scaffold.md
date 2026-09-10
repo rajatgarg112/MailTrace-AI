@@ -77,7 +77,7 @@ Email Parser
 
 ``` text
 mailtrace-ai/
-├── backend/
+├── database/
 │   ├── app/
 │   │   ├── main.py
 │   │   ├── api/
