@@ -10,23 +10,23 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import List, Dict, Optional, Any
 
-from backend.analysis.header_forensics import HeaderAnalysisResult
-from backend.analysis.authentication import AuthenticationResult, AuthStatus
-from backend.analysis.pii_redaction import PIIRedactionResult
-from backend.analysis.evidence_preservation import EvidenceDossier
+from security.analysis.header_forensics import HeaderAnalysisResult
+from security.analysis.authentication import AuthenticationResult, AuthStatus
+from security.analysis.pii_redaction import PIIRedactionResult
+from security.analysis.evidence_preservation import EvidenceDossier
 
 try:
-    from backend.analysis.url_analysis import URLAnalysisResult
+    from security.analysis.url_analysis import URLAnalysisResult
 except ImportError:
     URLAnalysisResult = Any
 
 try:
-    from backend.analysis.attachment_analysis import AttachmentAnalysisResult
+    from security.analysis.attachment_analysis import AttachmentAnalysisResult
 except ImportError:
     AttachmentAnalysisResult = Any
 
 try:
-    from backend.analysis.detection import NLPThreatResult
+    from security.analysis.detection import NLPThreatResult
 except ImportError:
     NLPThreatResult = Any
 

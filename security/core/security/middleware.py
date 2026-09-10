@@ -10,8 +10,8 @@ from fastapi import FastAPI, Request, Response, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
-from backend.core.security.config import security_config
-from backend.core.security.logging import SecurityLogger
+from security.core.security.config import security_config
+from security.core.security.logging import SecurityLogger
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):

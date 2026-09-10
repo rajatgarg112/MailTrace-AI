@@ -10,11 +10,26 @@ Tests all 5 security modules on feature/security-foundation:
 """
 
 import unittest
-from backend.analysis.header_forensics import HeaderForensics
-from backend.analysis.authentication import AuthenticationAnalyzer, AuthStatus
-from backend.analysis.evidence_preservation import EvidencePreserver
-from backend.analysis.pii_redaction import PIIRedactor
-from backend.analysis.security_policy import SecurityPolicyEngine, RiskLevel, DeliveryAction
+from security.analysis.header_forensics import HeaderForensics
+from security.analysis.authentication import AuthenticationAnalyzer, AuthStatus
+from security.analysis.evidence_preservation import EvidencePreserver
+from security.analysis.pii_redaction import PIIRedactor
+from security.analysis.security_policy import SecurityPolicyEngine, RiskLevel, DeliveryAction
+
+try:
+    from security.analysis.url_analysis import URLAnalyzer
+except ImportError:
+    URLAnalyzer = None
+
+try:
+    from security.analysis.attachment_analysis import AttachmentAnalyzer
+except ImportError:
+    AttachmentAnalyzer = None
+
+try:
+    from security.analysis.detection import NLPThreatDetector
+except ImportError:
+    NLPThreatDetector = None
 
 
 class TestSecurityFoundation(unittest.TestCase):
@@ -136,7 +151,7 @@ class TestSecurityFoundation(unittest.TestCase):
         self.assertEqual(auth_res.dkim_status, AuthStatus.NONE)
 
     def test_url_phishing_analysis(self):
-        from backend.analysis.url_analysis import URLAnalyzer
+        from security.analysis.url_analysis import URLAnalyzer
         url_analyzer = URLAnalyzer()
         phishing_text = "Please log in immediately at http://198.51.100.99/login and http://login-nic.gov-portal.co/verify"
         res = url_analyzer.analyze(phishing_text)
@@ -146,7 +161,7 @@ class TestSecurityFoundation(unittest.TestCase):
         self.assertEqual(res.total_urls, 2)
 
     def test_attachment_inspection(self):
-        from backend.analysis.attachment_analysis import AttachmentAnalyzer
+        from security.analysis.attachment_analysis import AttachmentAnalyzer
         att_analyzer = AttachmentAnalyzer()
         attachments = [{"filename": "invoice_doc.pdf.exe", "mime_type": "application/x-msdownload", "size_bytes": 100000}]
         res = att_analyzer.analyze(attachments)
@@ -155,7 +170,7 @@ class TestSecurityFoundation(unittest.TestCase):
         self.assertEqual(res.malicious_attachments_count, 1)
 
     def test_nlp_bec_detection(self):
-        from backend.analysis.detection import NLPThreatDetector
+        from security.analysis.detection import NLPThreatDetector
         nlp_detector = NLPThreatDetector()
         res = nlp_detector.analyze(
             subject="URGENT: Mandated Institutional Fund Wire Transfer",

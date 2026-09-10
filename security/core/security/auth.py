@@ -14,8 +14,8 @@ import hmac
 import json
 from typing import Optional, Dict, Any
 
-from backend.core.security.config import security_config
-from backend.core.security.password import PasswordSecurity
+from security.core.security.config import security_config
+from security.core.security.password import PasswordSecurity
 
 
 @dataclass

@@ -10,10 +10,10 @@ Tests:
 """
 
 import unittest
-from backend.core.security.password import PasswordSecurity
-from backend.core.security.auth import JWTAuth
-from backend.core.security.validation import InputSanitizer, StudentRegisterRequest
-from backend.core.security.logging import SecurityLogger
+from security.core.security.password import PasswordSecurity
+from security.core.security.auth import JWTAuth
+from security.core.security.validation import InputSanitizer, StudentRegisterRequest
+from security.core.security.logging import SecurityLogger
 
 
 class TestPlaceMateSecurityFoundation(unittest.TestCase):

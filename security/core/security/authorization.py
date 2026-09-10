@@ -7,7 +7,7 @@ access their own private placement preparation and application tracking data.
 
 from fastapi import Request, HTTPException, status, Depends
 from typing import Optional, Dict, Any
-from backend.core.security.auth import JWTAuth, StudentTokenPayload
+from security.core.security.auth import JWTAuth, StudentTokenPayload
 
 
 def get_bearer_token(request: Request) -> Optional[str]:

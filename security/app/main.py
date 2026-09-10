@@ -14,29 +14,29 @@ import time
 import uuid
 from datetime import datetime
 
-from backend.analysis.header_forensics import HeaderForensics, HeaderAnalysisResult
-from backend.analysis.authentication import AuthenticationAnalyzer, AuthenticationResult
-from backend.analysis.evidence_preservation import EvidencePreserver, EvidenceDossier
-from backend.analysis.pii_redaction import PIIRedactor, PIIRedactionResult
-from backend.analysis.security_policy import SecurityPolicyEngine, PolicyDecision, RiskLevel, DeliveryAction
+from security.analysis.header_forensics import HeaderForensics, HeaderAnalysisResult
+from security.analysis.authentication import AuthenticationAnalyzer, AuthenticationResult
+from security.analysis.evidence_preservation import EvidencePreserver, EvidenceDossier
+from security.analysis.pii_redaction import PIIRedactor, PIIRedactionResult
+from security.analysis.security_policy import SecurityPolicyEngine, PolicyDecision, RiskLevel, DeliveryAction
 
 try:
-    from backend.analysis.url_analysis import URLAnalyzer
+    from security.analysis.url_analysis import URLAnalyzer
 except ImportError:
     URLAnalyzer = None
 
 try:
-    from backend.analysis.attachment_analysis import AttachmentAnalyzer
+    from security.analysis.attachment_analysis import AttachmentAnalyzer
 except ImportError:
     AttachmentAnalyzer = None
 
 try:
-    from backend.analysis.detection import NLPThreatDetector
+    from security.analysis.detection import NLPThreatDetector
 except ImportError:
     NLPThreatDetector = None
 
 
-from backend.core.security import (
+from security.core.security import (
     setup_security_middleware,
     PasswordSecurity,
     JWTAuth,

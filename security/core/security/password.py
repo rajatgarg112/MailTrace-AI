@@ -12,7 +12,7 @@ import os
 import re
 import secrets
 from typing import Tuple, Optional
-from backend.core.security.config import security_config
+from security.core.security.config import security_config
 
 
 class PasswordSecurity:

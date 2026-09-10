@@ -91,7 +91,7 @@ Security Headers       CORS Whitelist       Input Sanitizer & Pydantic
 
 ## 4. Input Validation & Data Sanitization
 
-The `InputSanitizer` module in [`validation.py`](file:///d:/SIH%20PROJECT/MailTrace-AI/backend/core/security/validation.py) sanitizes incoming user strings to prevent script injection and HTML tampering across all application modules:
+The `InputSanitizer` module in [`validation.py`](file:///d:/SIH%20PROJECT/MailTrace-AI/security/core/security/validation.py) sanitizes incoming user strings to prevent script injection and HTML tampering across all application modules:
 
 | Input Field | Validation / Sanitization Logic | Prevented Threat |
 |-------------|--------------------------------|------------------|
@@ -119,7 +119,7 @@ The `InputSanitizer` module in [`validation.py`](file:///d:/SIH%20PROJECT/MailTr
 
 ## 6. Secret Management
 
-- **Centralized Configuration**: All security settings are managed in [`config.py`](file:///d:/SIH%20PROJECT/MailTrace-AI/backend/core/security/config.py) reading from environment variables:
+- **Centralized Configuration**: All security settings are managed in [`config.py`](file:///d:/SIH%20PROJECT/MailTrace-AI/security/core/security/config.py) reading from environment variables:
   - `PLACEMATE_ENV` (e.g. `development`, `production`)
   - `PLACEMATE_SECRET_KEY`
   - `PLACEMATE_TOKEN_EXPIRE_MINUTES`
@@ -139,7 +139,7 @@ The `InputSanitizer` module in [`validation.py`](file:///d:/SIH%20PROJECT/MailTr
 
 ## 8. Security Logging Foundation
 
-The `SecurityLogger` in [`logging.py`](file:///d:/SIH%20PROJECT/MailTrace-AI/backend/core/security/logging.py) records security-relevant events in JSON format:
+The `SecurityLogger` in [`logging.py`](file:///d:/SIH%20PROJECT/MailTrace-AI/security/core/security/logging.py) records security-relevant events in JSON format:
 
 - `LOGIN_SUCCESS`: Logged upon successful authentication with student ID, email, client IP, and timestamp.
 - `LOGIN_FAILED`: Logged upon failed login attempt with attempted email, client IP, and sanitized reason.
@@ -191,6 +191,6 @@ To maintain complete transparency for SIH evaluators, the following capabilities
 
 ## 12. Final Documentation Verification
 
-- **Code Accuracy**: Every feature documented above corresponds directly to functional code in `backend/core/security/` and `backend/app/main.py`.
+- **Code Accuracy**: Every feature documented above corresponds directly to functional code in `security/core/security/` and `security/app/main.py`.
 - **Zero Exposed Secrets**: All examples use generic template variables.
 - **SIH Compliance**: Provides a practical, verifiable security foundation protecting student data without unnecessary complexity.
