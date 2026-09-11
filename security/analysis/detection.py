@@ -27,7 +27,9 @@ class NLPThreatDetector:
     URGENCY_KEYWORDS = [
         r"immediate(?:ly)?\s+action", r"wire\s+transfer", r"account\s+suspended",
         r"within\s+\d+\s+hours", r"urgent\s+mandate", r"password\s+expir(?:ed|ation)",
-        r"transfer\s+funds", r"verify\s+immediately", r"action\s+required"
+        r"transfer\s+funds", r"verify\s+immediately", r"action\s+required",
+        r"click\s+(?:here|this\s+link|link|below|to)", r"follow\s+(?:this\s+)?link",
+        r"open\s+(?:this\s+)?link", r"verify\s+(?:your\s+)?account", r"login\s+immediately"
     ]
 
     EXECUTIVE_TITLES = [
@@ -76,16 +78,16 @@ class NLPThreatDetector:
         nlp_risk = 0.0
 
         if is_impersonation and is_payment:
-            nlp_risk += 60.0
+            nlp_risk += 80.0
             category = "BEC_PAYMENT_DIVERSION"
         elif is_impersonation:
-            nlp_risk += 35.0
+            nlp_risk += 60.0
             category = "EXECUTIVE_IMPERSONATION"
         elif urgency_score > 50:
-            nlp_risk += 40.0
+            nlp_risk += 65.0
             category = "URGENT_CREDENTIAL_HARVEST"
         elif urgency_score > 0 or is_payment:
-            nlp_risk += 20.0
+            nlp_risk += 55.0
             category = "HIGH_RISK"
         else:
             category = "CLEAN"

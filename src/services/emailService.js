@@ -107,8 +107,34 @@ export const emailService = {
   // Send new email (Simulate Gateway Pre-delivery Scan)
   async sendEmail({ recipient, subject, body, attachment }) {
     await new Promise((resolve) => setTimeout(resolve, 200));
+
+    const fullText = (subject + ' ' + body).toLowerCase();
     
-    const hasSuspiciousKeyword = /password|urgent|bank|verify|click here/i.test(subject + body);
+    // Check 1: Embedded links or 'click here' action prompts -> High Threat / QUARANTINED
+    const hasLinkOrClickHere = /https?:\/\/|www\.|click\s+(?:here|this\s+link|link|below|to)|follow\s+link|open\s+link|verify\s+(?:here|account)|login\s+here/i.test(fullText);
+    
+    // Check 2: Simple friendly greeting ("hello", "hi", "hey") without links -> SAFE
+    const isFriendlyGreeting = /^(?:hello|hi|hey|good\s+(?:morning|afternoon|evening))\b/i.test(fullText.trim()) || (/hello|hi|hey/i.test(fullText) && !hasLinkOrClickHere && fullText.length < 150);
+
+    // Check 3: Other suspicious keywords -> WARNING
+    const hasSuspiciousKeyword = /password|urgent|bank|wire|verify|account\s+suspended|mandate/i.test(fullText);
+
+    let status = "SAFE";
+    let folder = "sent";
+    let riskScore = 0.05;
+    let securityReasons = ["Pre-delivery envelope & content verified clean"];
+
+    if (hasLinkOrClickHere) {
+      status = "QUARANTINED";
+      folder = "quarantine";
+      riskScore = 0.88;
+      securityReasons = ["Pre-delivery threat intercept: Embedded link or 'click here' call-to-action detected"];
+    } else if (hasSuspiciousKeyword) {
+      status = "WARNING";
+      riskScore = 0.45;
+      securityReasons = ["Pre-delivery policy warning: High-urgency keyword or verification request flagged"];
+    }
+
     const newEmail = {
       id: `msg-${Date.now()}`,
       deliveryId: `del_${Math.floor(10000 + Math.random() * 90000)}`,
@@ -120,22 +146,20 @@ export const emailService = {
       body,
       timestamp: new Date().toISOString(),
       date: "Just Now",
-      folder: "sent",
-      status: hasSuspiciousKeyword ? "WARNING" : "SAFE",
-      riskScore: hasSuspiciousKeyword ? 0.45 : 0.02,
+      folder,
+      status,
+      riskScore,
       isRead: true,
       isStarred: false,
       hasAttachment: !!attachment,
       attachments: attachment ? [{ name: attachment.name, size: `${(attachment.size / 1024).toFixed(1)} KB`, type: 'file', isClean: true }] : [],
       authentication: {
-        spf: "PASS",
-        dkim: "PASS",
-        dmarc: "PASS",
-        domainAlignment: "MATCHED"
+        spf: status === "QUARANTINED" ? "FAIL" : "PASS",
+        dkim: status === "QUARANTINED" ? "FAIL" : "PASS",
+        dmarc: status === "QUARANTINED" ? "FAIL" : "PASS",
+        domainAlignment: status === "QUARANTINED" ? "MISMATCH" : "MATCHED"
       },
-      securityReasons: hasSuspiciousKeyword 
-        ? ["Keyword scan flagged potential sensitive information warning"]
-        : ["Pre-delivery check passed", "Internal outbound envelope signed"],
+      securityReasons,
       timing: {
         scanLatencyMs: Math.floor(80 + Math.random() * 60),
         totalLatencyMs: Math.floor(120 + Math.random() * 80)

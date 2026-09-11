@@ -116,8 +116,7 @@ class SecurityPolicyEngine:
 
         # 5. URL Phishing & Homoglyph Impact
         if url_result and url_result.overall_url_risk_score > 0:
-            impact = (url_result.overall_url_risk_score / 100.0) * 45.0
-            threat_score += impact
+            threat_score += url_result.overall_url_risk_score
             for summary_item in url_result.findings_summary:
                 triggers.append(summary_item)
 
@@ -148,12 +147,10 @@ class SecurityPolicyEngine:
         # Determine Risk Level and Delivery Action
         if (
             (header_result.is_spoofed_domain and (auth_result.spf_status == AuthStatus.FAIL or auth_result.dkim_status == AuthStatus.FAIL))
-            or (url_result and url_result.malicious_urls_count > 0)
+            or (url_result and (url_result.malicious_urls_count > 0 or url_result.has_phishing_links or url_result.overall_url_risk_score >= 50.0))
             or (attachment_result and attachment_result.malicious_attachments_count > 0)
+            or threat_score >= self.quarantine_threshold
         ):
-            risk_level = RiskLevel.MALICIOUS
-            delivery_action = DeliveryAction.QUARANTINE
-        elif threat_score >= self.quarantine_threshold:
             risk_level = RiskLevel.MALICIOUS
             delivery_action = DeliveryAction.QUARANTINE
         elif threat_score >= self.warning_threshold:

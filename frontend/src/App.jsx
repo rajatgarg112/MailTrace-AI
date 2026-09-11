@@ -29,8 +29,10 @@ import {
   Check
 } from 'lucide-react';
 
+import SecurityDashboard from '../../src/pages/SecurityDashboard';
+
 export default function App() {
-  const [activeNav, setActiveNav] = useState('inbox'); // inbox | quarantine | forensics
+  const [activeNav, setActiveNav] = useState('inbox'); // inbox | quarantine | forensics | dashboard
   const [inboxList, setInboxList] = useState([]);
   const [quarantineList, setQuarantineList] = useState([]);
   const [selectedMsg, setSelectedMsg] = useState(null);
@@ -227,6 +229,17 @@ export default function App() {
           </div>
 
           <div
+            className={`nav-item ${activeNav === 'dashboard' ? 'active' : ''}`}
+            onClick={() => setActiveNav('dashboard')}
+          >
+            <div className="nav-icon-group">
+              <ShieldCheck size={19} color="var(--accent-cyan)" />
+              <span>Security Dashboard</span>
+            </div>
+            <span className="badge badge-cyan">SOC Live</span>
+          </div>
+
+          <div
             className={`nav-item ${activeNav === 'forensics' ? 'active' : ''}`}
             onClick={() => setActiveNav('forensics')}
           >
@@ -316,8 +329,13 @@ export default function App() {
           </div>
         )}
 
-        {/* Content Split Grid */}
-        <div className="content-grid">
+        {/* Content View */}
+        {activeNav === 'dashboard' ? (
+          <div style={{ flexGrow: 1, overflowY: 'auto' }}>
+            <SecurityDashboard />
+          </div>
+        ) : (
+          <div className="content-grid">
           {/* Email List View Column */}
           <section className="mail-list-panel">
             <div className="list-header">
@@ -619,6 +637,7 @@ export default function App() {
             )}
           </section>
         </div>
+        )}
       </main>
 
       {/* Scenario Trigger Modal */}
