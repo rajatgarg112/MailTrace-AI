@@ -12,12 +12,7 @@ import {
   BarChart3,
   PieChart,
   RefreshCw,
-  Sliders,
-  Shield,
-  CheckCircle2,
-  Filter,
-  ArrowUpRight,
-  Cpu
+  ShieldAlert
 } from 'lucide-react';
 import { emailService } from '../services/emailService';
 import SecurityBadge from '../components/common/SecurityBadge';
@@ -26,21 +21,13 @@ import './SecurityDashboard.css';
 export const SecurityDashboard = () => {
   const [metrics, setMetrics] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [feedFilter, setFeedFilter] = useState('ALL'); // ALL | SAFE | WARNING | QUARANTINED
 
-  const fetchMetrics = async (isManual = false) => {
-    if (isManual) setRefreshing(true);
-    else setLoading(true);
-
+  const fetchMetrics = async () => {
+    setLoading(true);
     const data = await emailService.getSecurityMetrics();
     setMetrics(data);
-
-    if (isManual) {
-      setTimeout(() => setRefreshing(false), 400);
-    } else {
-      setLoading(false);
-    }
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -50,104 +37,91 @@ export const SecurityDashboard = () => {
   if (loading || !metrics) {
     return (
       <div className="dashboard-loading">
-        <RefreshCw size={28} className="spin text-cyan" />
-        <span>Initializing MailTrace AI SOC Command Telemetry...</span>
+        <RefreshCw size={28} className="spin-icon text-cyan" />
+        <span>Calculating Dynamic Gateway Security Telemetry...</span>
       </div>
     );
   }
 
-  const filteredFeed = metrics.recentEmails.filter((email) => {
-    if (feedFilter === 'ALL') return true;
-    return email.status === feedFilter;
+  // Filter recent email feed
+  const filteredFeed = metrics.recentEmails.filter((item) => {
+    if (feedFilter === 'SAFE') return item.status === 'SAFE';
+    if (feedFilter === 'WARNING') return item.status === 'WARNING';
+    if (feedFilter === 'QUARANTINED') return item.status === 'QUARANTINED' || item.folder === 'quarantine';
+    return true;
   });
 
   return (
     <div className="security-dashboard-page">
-      {/* Cyber SOC Top Header Banner */}
+      {/* Top Operations Banner Card */}
       <div className="dashboard-header-card">
-        <div className="header-glow-bg"></div>
         <div className="header-left">
-          <div className="header-badge-row">
-            <div className="header-badge">
-              <Radio size={13} className="pulse-icon" />
-              <span>GATEWAY ACTIVE • PRE-DELIVERY PROTECTION</span>
-            </div>
-            <div className="header-badge badge-soc">
-              <Cpu size={12} color="#06b6d4" />
-              <span>SOC NODE #01 (ONLINE)</span>
-            </div>
+          <div className="badge-row">
+            <span className="status-badge-green">
+              <Radio size={13} className="spin-pulse" />
+              GATEWAY ACTIVE - PRE-DELIVERY PROTECTION
+            </span>
+            <span className="status-badge-blue">
+              <ShieldCheck size={13} />
+              SOC NODE #01 (ONLINE)
+            </span>
           </div>
-
-          <h2 className="header-title">
-            MailTrace AI <span className="title-highlight">Threat Operations Center</span>
-          </h2>
-          <p className="header-desc">
+          <h2 className="dashboard-title">MailTrace AI Threat Operations Center</h2>
+          <p className="dashboard-sub">
             Real-time pre-delivery threat vector interception, cryptographic RFC audit, and telemetry analytics.
           </p>
         </div>
 
         <div className="header-right">
           <div className="latency-box">
-            <Clock size={18} className="text-cyan pulse" />
+            <Clock size={18} className="text-vibrant-blue" />
             <div>
-              <div className="latency-val-group">
+              <div className="latency-val-row">
                 <span className="latency-val">{metrics.avgScanLatencyMs} ms</span>
-                <span className="latency-trend"><ArrowUpRight size={12} /> Optimal</span>
+                <span className="optimal-pill">Optimal</span>
               </div>
-              <span className="latency-lbl">Avg Intercept Latency</span>
+              <span className="latency-lbl">AVG INTERCEPT LATENCY</span>
             </div>
           </div>
 
-          <button 
-            className={`refresh-btn ${refreshing ? 'spinning' : ''}`}
-            onClick={() => fetchMetrics(true)}
-            title="Refresh Telemetry Data"
-          >
-            <RefreshCw size={15} className={refreshing ? 'spin' : ''} />
-            <span>{refreshing ? 'Syncing...' : 'Live Refresh'}</span>
+          <button className="btn-live-refresh" onClick={fetchMetrics} title="Refresh Telemetry">
+            <RefreshCw size={14} className={loading ? 'spin-icon' : ''} />
+            <span>Live Refresh</span>
           </button>
         </div>
       </div>
 
-      {/* Main Metric Cyber Cards Grid */}
+      {/* Main Dynamic Metric Cards Grid (6 Cards) */}
       <div className="metrics-grid">
-        {/* Card 1: Total Scanned */}
+        {/* Card 1: TOTAL EVALUATED */}
         <div className="metric-card card-total">
           <div className="card-top">
-            <span className="card-label">Total Evaluated</span>
-            <div className="icon-wrapper cyan">
-              <Database size={18} />
-            </div>
+            <span className="card-label">TOTAL EVALUATED</span>
+            <Database size={20} className="card-icon text-cyan" />
           </div>
           <div className="card-value">{metrics.totalScanned}</div>
           <div className="card-footer">
-            <CheckCircle2 size={13} className="text-cyan" />
             <span>100% Ingress Inspection</span>
           </div>
         </div>
 
-        {/* Card 2: Safe Emails */}
+        {/* Card 2: CLEAN DELIVERY */}
         <div className="metric-card card-safe">
           <div className="card-top">
-            <span className="card-label">Clean Delivery</span>
-            <div className="icon-wrapper emerald">
-              <ShieldCheck size={18} />
-            </div>
+            <span className="card-label">CLEAN DELIVERY</span>
+            <ShieldCheck size={20} className="card-icon text-emerald" />
           </div>
           <div className="card-value text-emerald">{metrics.safe}</div>
           <div className="card-footer">
-            <span className="rate-badge text-emerald">{metrics.cleanRatePercentage}% Clean</span>
-            <span>Delivered safely</span>
+            <span className="text-emerald">{metrics.cleanRatePercentage}% Clean</span> Delivered safely
           </div>
         </div>
 
-        {/* Card 3: Warning Emails */}
+        {/* Card 3: POLICY WARNINGS */}
         <div className="metric-card card-warnings">
           <div className="card-top">
-            <span className="card-label">Policy Warnings</span>
-            <div className="icon-wrapper amber">
-              <AlertTriangle size={18} />
-            </div>
+            <span className="card-label">POLICY WARNINGS</span>
+            <AlertTriangle size={20} className="card-icon text-warning" />
           </div>
           <div className="card-value text-warning">{metrics.warnings}</div>
           <div className="card-footer">
@@ -155,13 +129,11 @@ export const SecurityDashboard = () => {
           </div>
         </div>
 
-        {/* Card 4: Quarantined Emails */}
+        {/* Card 4: QUARANTINE VAULT */}
         <div className="metric-card card-quarantined">
           <div className="card-top">
-            <span className="card-label">Quarantine Vault</span>
-            <div className="icon-wrapper crimson">
-              <Lock size={18} />
-            </div>
+            <span className="card-label">QUARANTINE VAULT</span>
+            <Lock size={20} className="card-icon text-danger" />
           </div>
           <div className="card-value text-danger">{metrics.quarantined}</div>
           <div className="card-footer">
@@ -169,13 +141,11 @@ export const SecurityDashboard = () => {
           </div>
         </div>
 
-        {/* Card 5: Hard Rejected */}
+        {/* Card 5: HARD BLOCKED */}
         <div className="metric-card card-rejected">
           <div className="card-top">
-            <span className="card-label">Hard Blocked</span>
-            <div className="icon-wrapper rose">
-              <XCircle size={18} />
-            </div>
+            <span className="card-label">HARD BLOCKED</span>
+            <XCircle size={20} className="card-icon text-rose" />
           </div>
           <div className="card-value text-rose">{metrics.rejected}</div>
           <div className="card-footer">
@@ -183,13 +153,11 @@ export const SecurityDashboard = () => {
           </div>
         </div>
 
-        {/* Card 6: Threats Neutralized */}
+        {/* Card 6: THREATS MITIGATED */}
         <div className="metric-card card-threats">
           <div className="card-top">
-            <span className="card-label">Threats Mitigated</span>
-            <div className="icon-wrapper purple">
-              <Zap size={18} />
-            </div>
+            <span className="card-label">THREATS MITIGATED</span>
+            <Zap size={20} className="card-icon text-purple" />
           </div>
           <div className="card-value text-purple">{metrics.threatsDetected}</div>
           <div className="card-footer">
@@ -198,37 +166,36 @@ export const SecurityDashboard = () => {
         </div>
       </div>
 
-      {/* Security Status Overview Section */}
+      {/* Security Overview Section: Gateway Threat Distribution & Percentage Stance */}
       <div className="security-overview-card">
         <div className="card-title-bar">
-          <div className="title-group">
-            <PieChart size={18} className="text-cyan" />
+          <div className="title-left">
+            <PieChart size={18} className="text-vibrant-blue" />
             <h3>Gateway Threat Distribution & Percentage Stance</h3>
           </div>
-          <div className="status-pill-active">
-            <span className="dot-pulse"></span>
-            <span>STANCE: ACTIVE MITIGATION</span>
-          </div>
+          <span className="stance-pill-vibrant">
+            <ShieldAlert size={13} /> STANCE: ACTIVE MITIGATION
+          </span>
         </div>
 
-        {/* Multi-segment Neon Progress Track */}
+        {/* Multi-segment Progress Bar */}
         <div className="overview-progress-track">
           {metrics.statusDistribution.map((item) => (
             <div 
               key={item.label}
               className={`overview-progress-segment ${item.class}`}
-              style={{ width: `${Math.max(item.percent, 3)}%` }}
-              title={`${item.label}: ${item.count} messages (${item.percent.toFixed(1)}%)`}
+              style={{ width: `${item.percent}%` }}
+              title={`${item.label}: ${item.count} (${item.percent.toFixed(1)}%)`}
             ></div>
           ))}
         </div>
 
-        {/* Breakdown Items */}
+        {/* Distribution Breakdown Cards Grid */}
         <div className="overview-distribution-grid">
           {metrics.statusDistribution.map((item) => (
             <div key={item.label} className="dist-item-box">
               <div className="dist-header">
-                <span className="dist-dot" style={{ backgroundColor: item.color, boxShadow: `0 0 10px ${item.color}` }}></span>
+                <span className="dist-dot" style={{ backgroundColor: item.color }}></span>
                 <span className="dist-label">{item.label}</span>
               </div>
               <div className="dist-count">{item.count}</div>
@@ -238,16 +205,16 @@ export const SecurityDashboard = () => {
         </div>
       </div>
 
-      {/* Charts & Activity Stream Dual Grid */}
+      {/* Visual Charts & Live Event Stream Row (2 Columns) */}
       <div className="dashboard-content-row">
-        {/* Left: 7-Day Histogram */}
+        {/* Left Column: 7-Day Threat Vector Histogram */}
         <div className="chart-card">
           <div className="card-title-bar">
-            <div className="title-group">
-              <BarChart3 size={18} className="text-cyan" />
+            <div className="title-left">
+              <BarChart3 size={18} className="text-vibrant-blue" />
               <h3>7-Day Threat Vector Histogram</h3>
             </div>
-            <span className="tag-mono">7D ROLLING</span>
+            <span className="rolling-pill">7D ROLLING</span>
           </div>
 
           <div className="chart-bars-container">
@@ -282,31 +249,46 @@ export const SecurityDashboard = () => {
           </div>
         </div>
 
-        {/* Right: Live Gateway Feed */}
+        {/* Right Column: Live Gateway Activity Feed */}
         <div className="feed-card">
           <div className="card-title-bar">
-            <div className="title-group">
-              <Activity size={18} className="text-cyan pulse" />
+            <div className="title-left">
+              <Activity size={18} className="text-vibrant-blue" />
               <h3>Live Gateway Activity Feed</h3>
             </div>
 
-            {/* Quick Feed Filters */}
-            <div className="feed-filter-group">
-              <Filter size={13} className="text-dim" />
-              {['ALL', 'SAFE', 'WARNING', 'QUARANTINED'].map((f) => (
-                <button
-                  key={f}
-                  className={`feed-filter-btn ${feedFilter === f ? 'active' : ''}`}
-                  onClick={() => setFeedFilter(f)}
-                >
-                  {f}
-                </button>
-              ))}
+            <div className="feed-filter-pills">
+              <button 
+                className={`feed-filter-btn ${feedFilter === 'ALL' ? 'active' : ''}`}
+                onClick={() => setFeedFilter('ALL')}
+              >
+                ALL
+              </button>
+              <button 
+                className={`feed-filter-btn ${feedFilter === 'SAFE' ? 'active' : ''}`}
+                onClick={() => setFeedFilter('SAFE')}
+              >
+                SAFE
+              </button>
+              <button 
+                className={`feed-filter-btn ${feedFilter === 'WARNING' ? 'active' : ''}`}
+                onClick={() => setFeedFilter('WARNING')}
+              >
+                WARNING
+              </button>
+              <button 
+                className={`feed-filter-btn ${feedFilter === 'QUARANTINED' ? 'active' : ''}`}
+                onClick={() => setFeedFilter('QUARANTINED')}
+              >
+                QUARANTINED
+              </button>
             </div>
           </div>
 
           <div className="feed-list">
-            {filteredFeed.length > 0 ? (
+            {filteredFeed.length === 0 ? (
+              <div className="empty-feed-text">No gateway events match active filter</div>
+            ) : (
               filteredFeed.map((email) => (
                 <div key={email.id} className="feed-item">
                   <div className="feed-time">{email.date}</div>
@@ -319,8 +301,6 @@ export const SecurityDashboard = () => {
                   </div>
                 </div>
               ))
-            ) : (
-              <div className="feed-empty">No activity events matching "{feedFilter}" filter.</div>
             )}
           </div>
         </div>
@@ -330,3 +310,6 @@ export const SecurityDashboard = () => {
 };
 
 export default SecurityDashboard;
+
+
+
