@@ -38,8 +38,9 @@ class URLAnalysisResult:
 class URLAnalyzer:
     """Pre-Delivery URL & Phishing Link Security Engine"""
 
-    # URL Extraction Regex (captures http/https links)
-    URL_REGEX = re.compile(r"https?://[^\s<>\"']+", re.IGNORECASE)
+    # URL Extraction Regex (captures http/https and www links)
+    URL_REGEX = re.compile(r"(?:https?://|www\.)[^\s<>\"']+", re.IGNORECASE)
+    CLICK_HERE_REGEX = re.compile(r"\b(?:click\s+(?:here|this\s+link|link|below|to|and)|follow\s+this\s+link|open\s+link|verify\s+(?:here|account|link)|login\s+here)\b", re.IGNORECASE)
 
     # Common URL Shorteners
     SHORTENERS = {
@@ -76,9 +77,19 @@ class URLAnalyzer:
             clean_text = clean_text.replace(zw, "")
 
         extracted_urls = self.URL_REGEX.findall(clean_text)
+        click_here_matches = self.CLICK_HERE_REGEX.findall(clean_text)
+
+        # Normalize www. URLs to http:// for parsing
+        normalized_urls = []
+        for u in extracted_urls:
+            if u.lower().startswith("www."):
+                normalized_urls.append("http://" + u)
+            else:
+                normalized_urls.append(u)
+
         # Deduplicate while preserving order
         seen = set()
-        unique_urls = [u for u in extracted_urls if not (u in seen or seen.add(u))]
+        unique_urls = [u for u in normalized_urls if not (u in seen or seen.add(u))]
 
         details: List[URLRiskFactor] = []
         findings: List[str] = []
@@ -89,24 +100,36 @@ class URLAnalyzer:
             details.append(risk_item)
 
             if risk_item.risk_level == "MALICIOUS":
-                total_risk_score += 45.0
+                total_risk_score += 85.0
             elif risk_item.risk_level == "SUSPICIOUS":
-                total_risk_score += 25.0
+                total_risk_score += 65.0
+            else:
+                # Any embedded link raises risk to at least 60
+                total_risk_score += 60.0
 
             for r in risk_item.reasons:
                 findings.append(f"URL ALERT: [{url}] — {r}")
 
+        if click_here_matches and not unique_urls:
+            total_risk_score += 80.0
+            findings.append(f"LINK ACTION THREAT: Call-to-action phrase detected ('{click_here_matches[0]}') requesting user click")
+        elif click_here_matches:
+            total_risk_score += 30.0
+            findings.append(f"LINK ACTION THREAT: Suspicious link anchor text detected ('{click_here_matches[0]}')")
+
         total_risk_score = min(100.0, total_risk_score)
-        malicious_count = sum(1 for d in details if d.risk_level == "MALICIOUS")
+        malicious_count = sum(1 for d in details if d.risk_level == "MALICIOUS") + (1 if click_here_matches and not unique_urls else 0)
         suspicious_count = sum(1 for d in details if d.risk_level == "SUSPICIOUS")
 
+        has_links = bool(unique_urls or click_here_matches)
+
         return URLAnalysisResult(
-            total_urls=len(unique_urls),
+            total_urls=len(unique_urls) + (1 if (click_here_matches and not unique_urls) else 0),
             malicious_urls_count=malicious_count,
             suspicious_urls_count=suspicious_count,
             url_details=details,
             overall_url_risk_score=total_risk_score,
-            has_phishing_links=(malicious_count > 0 or suspicious_count > 0),
+            has_phishing_links=has_links,
             findings_summary=findings if findings else ["All embedded URLs verified as clean."],
         )
 

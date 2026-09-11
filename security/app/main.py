@@ -326,9 +326,20 @@ def simulate_delivery(req: DeliverySimulateRequest):
         subject = scenario["subject"]
         attachments_list = scenario.get("attachments", [])
     elif req.raw_email:
-        raw_email = req.raw_email
-        sender = req.sender or "unknown@external.org"
-        subject = req.subject or "Custom Ingress Email"
+        sender = req.sender or "sender@external.org"
+        subject = req.subject or "Custom Email Message"
+        if not ("From:" in req.raw_email or "Received:" in req.raw_email):
+            raw_email = (
+                f"From: {sender}\r\n"
+                f"To: {req.recipient or 'recipient@sih.gov.in'}\r\n"
+                f"Subject: {subject}\r\n"
+                f"Date: Thu, 11 Sep 2026 12:00:00 -0700\r\n"
+                f"Message-ID: <custom-{uuid.uuid4().hex[:8]}@external.org>\r\n"
+                f"Authentication-Results: mx.sih.gov.in; spf=pass; dkim=pass\r\n\r\n"
+                f"{req.raw_email}"
+            )
+        else:
+            raw_email = req.raw_email
     else:
         scenario = DEMO_SCENARIOS["benign"]
         raw_email = scenario["raw_email"]
