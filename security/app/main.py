@@ -340,7 +340,11 @@ def simulate_delivery(req: DeliverySimulateRequest):
 
         # ── Content-Aware Threat Pre-Scanner ──
         # Always runs on custom emails to determine correct auth header values.
-        _combined = (_body_only + " " + subject + " " + sender).lower()
+        _combined = (req.raw_email + " " + subject + " " + sender).lower()
+
+        # Signal 0: Explicit SPF/DKIM failure typed in raw headers
+        _has_explicit_spf_fail = "spf=fail" in _combined or "spf=softfail" in _combined
+        _has_explicit_dkim_fail = "dkim=fail" in _combined
 
         # Signal 1: IP-based URLs (always malicious)
         _has_ip_url = bool(_re.search(
@@ -366,20 +370,19 @@ def simulate_delivery(req: DeliverySimulateRequest):
         _has_phish_kw = len(_phish_hits) >= 1
         _has_strong_phish = len(_phish_hits) >= 2  # 2+ keywords = stronger signal
 
-        # Signal 4: Spoofed-looking sender domain
+        # Signal 4: Spoofed-looking sender domain anywhere in raw email or sender
         _spoofed_domains = [
             "gov-portal", "nic-portal", "aicte-gov", "bank-verify", "login-portal",
             "-update.xyz", "-verify.com", "-secure.net", "phish", "spam",
             "-portal-update", ".xyz", ".top", ".online",
         ]
-        _has_spoofed_dom = any(kw in sender.lower() for kw in _spoofed_domains)
+        _has_spoofed_dom = any(kw in _combined for kw in _spoofed_domains)
 
         # Signal 5: Any http:// links at all (suspicious without https)
-        _has_any_http = bool(_re.search(r'http://', _body_only, _re.I))
-        _has_https_only = bool(_re.search(r'https://', _body_only, _re.I)) and not _has_any_http
+        _has_any_http = bool(_re.search(r'http://', req.raw_email, _re.I))
 
         # ── Determine auth status and relay from signals ──
-        if _has_ip_url or _has_http_login or (_has_spoofed_dom and _has_phish_kw):
+        if _has_ip_url or _has_http_login or _has_explicit_spf_fail or _has_explicit_dkim_fail or (_has_spoofed_dom and _has_phish_kw):
             # MALICIOUS: definitive threat indicators
             _spf_status = "fail"
             _dkim_status = "fail"
