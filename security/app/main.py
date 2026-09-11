@@ -329,13 +329,59 @@ def simulate_delivery(req: DeliverySimulateRequest):
         sender = req.sender or "sender@external.org"
         subject = req.subject or "Custom Email Message"
         if not ("From:" in req.raw_email or "Received:" in req.raw_email):
+            # ── Content-aware auth header generation ──
+            # Pre-scan body text to detect threat signals before building headers.
+            # This ensures the auth pipeline reflects actual risk, not fake pass status.
+            body_lower = req.raw_email.lower()
+            subject_lower = subject.lower()
+            combined = body_lower + " " + subject_lower + " " + sender.lower()
+
+            # Threat signal detection
+            import re as _re
+            _has_ip_url      = bool(_re.search(r'https?://\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', req.raw_email))
+            _has_http_login  = bool(_re.search(r'http://[^\s]*(login|verify|account|signin|password|credential)', req.raw_email, _re.I))
+            _has_phish_kw    = any(kw in combined for kw in [
+                "suspended", "expir", "wire transfer", "verify your", "click here",
+                "urgent", "immediate", "within 24", "within 48", "within 2 hour",
+                "bank account", "transfer fund", "password reset", "credential",
+                "re-verify", "re-enter", "login immediately", "account locked",
+                "click the link", "follow this link", "open this link",
+            ])
+            _has_spoofed_dom = any(kw in sender.lower() for kw in [
+                "gov-portal", "nic-portal", "aicte-gov", "bank-verify", "login-portal",
+                "-update.xyz", "-verify.com", "-secure.net", ".co/", "phish", "spam",
+            ])
+            _has_raw_ip_host = bool(_re.search(r'https?://\d{1,3}\.', req.raw_email))
+
+            # Decide auth status based on threat signals
+            _is_suspicious = _has_phish_kw or _has_ip_url or _has_http_login or _has_raw_ip_host
+            _is_malicious  = (_has_spoofed_dom and _is_suspicious) or _has_ip_url or _has_http_login
+
+            if _is_malicious:
+                _spf_status  = "fail"
+                _dkim_status = "fail"
+                _received_from = f"Received: from suspicious-relay.unknown.net ([198.51.100.99])\r\n        by ingress.mailtrace.internal with ESMTP id custom001;\r\n        Thu, 11 Sep 2026 12:00:00 -0700\r\n"
+                _return_path = f"Return-Path: <spoof@untrusted-relay.net>\r\n"
+            elif _is_suspicious:
+                _spf_status  = "softfail"
+                _dkim_status = "none"
+                _received_from = f"Received: from unverified-host.external.org ([203.0.113.88])\r\n        by ingress.mailtrace.internal with ESMTP id custom002;\r\n        Thu, 11 Sep 2026 12:00:00 -0700\r\n"
+                _return_path = ""
+            else:
+                _spf_status  = "pass"
+                _dkim_status = "pass"
+                _received_from = f"Received: from mail-verified.external.org ([209.85.216.41])\r\n        by mx.sih.gov.in with SMTPS id custom003;\r\n        Thu, 11 Sep 2026 12:00:00 -0700\r\n"
+                _return_path = f"Return-Path: <{sender}>\r\n"
+
             raw_email = (
+                f"{_received_from}"
                 f"From: {sender}\r\n"
+                f"{_return_path}"
                 f"To: {req.recipient or 'recipient@sih.gov.in'}\r\n"
                 f"Subject: {subject}\r\n"
                 f"Date: Thu, 11 Sep 2026 12:00:00 -0700\r\n"
                 f"Message-ID: <custom-{uuid.uuid4().hex[:8]}@external.org>\r\n"
-                f"Authentication-Results: mx.sih.gov.in; spf=pass; dkim=pass\r\n\r\n"
+                f"Authentication-Results: mx.sih.gov.in; spf={_spf_status}; dkim={_dkim_status}\r\n\r\n"
                 f"{req.raw_email}"
             )
         else:
