@@ -96,8 +96,6 @@ export const EmailView = () => {
         </div>
       </div>
 
-      {/* Reusable Security Analysis Component Embedded */}
-      <SecurityAnalysisPanel email={email} />
 
       {/* Email Header Card */}
       <div className="email-header-card">
@@ -211,6 +209,9 @@ export const EmailView = () => {
           </div>
         </div>
       )}
+      {/* Reusable Security Analysis Component Embedded */}
+      <SecurityAnalysisPanel email={email} />
+      
     </div>
   );
 };
