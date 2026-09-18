@@ -133,13 +133,7 @@ export const EmailView = () => {
           <FileCheck size={15} />
           <span>Email Content</span>
         </button>
-        <button 
-          className={`tab-btn ${activeTab === 'RELAY' ? 'active' : ''}`}
-          onClick={() => setActiveTab('RELAY')}
-        >
-          <Network size={15} />
-          <span>MTA Relay Telemetry</span>
-        </button>
+        
       </div>
 
       {/* Tab 1: Email Body & Attachments */}
@@ -177,38 +171,7 @@ export const EmailView = () => {
         </>
       )}
 
-      {/* Tab 2: MTA Relay Telemetry */}
-      {activeTab === 'RELAY' && (
-        <div className="email-relay-card">
-          <h3>Pre-Delivery Gateway Intercept Trail</h3>
-          <div className="relay-step">
-            <div className="step-num">Hop 1</div>
-            <div className="step-body">
-              <strong>Source Ingress:</strong> {email.senderEmail}
-              <div className="text-muted">Originating IP: 198.51.100.44 • Handshake: TLS 1.3</div>
-            </div>
-            <span className="step-time">0 ms</span>
-          </div>
-
-          <div className="relay-step">
-            <div className="step-num">Hop 2</div>
-            <div className="step-body">
-              <strong>MailTrace Pre-Delivery Gateway Intercept</strong>
-              <div className="text-muted">Analyzers: SPF, DKIM, DMARC, Deep NLP Phishing Scanner</div>
-            </div>
-            <span className="step-time">+{email.timing?.scanLatencyMs || 145} ms</span>
-          </div>
-
-          <div className="relay-step">
-            <div className="step-num">Hop 3</div>
-            <div className="step-body">
-              <strong>Gateway Decision:</strong> <SecurityBadge status={email.status} size="sm" />
-              <div className="text-muted">SHA-256 Digest: {sha256Hash.slice(0, 32)}...</div>
-            </div>
-            <span className="step-time">+{email.timing?.totalLatencyMs || 198} ms</span>
-          </div>
-        </div>
-      )}
+    
       {/* Reusable Security Analysis Component Embedded */}
       <SecurityAnalysisPanel email={email} />
       
