@@ -1,3 +1,0 @@
-"""
-MailTrace AI Backend Package
-"""
