@@ -1,7 +1,9 @@
+import re
+import hashlib
 import uuid
 from typing import Dict, List, Any
 from datetime import datetime, timezone
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.routers import health, emails, deliveries, quarantine
@@ -17,7 +19,7 @@ app = FastAPI(
 # CORS Configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["Content-Type", "Authorization", "Accept", "X-Requested-With"],
@@ -277,7 +279,7 @@ MOCK_QUARANTINE = [
             "spf_status": "FAIL",
             "dkim_status": "FAIL",
             "dmarc_status": "FAIL",
-            "overall_auth_score": 10,
+            "overall_auth_score": 0,
             "is_authenticated": False,
             "details": "SPF failure on suspicious .tk domain; unauthenticated origin"
         },
@@ -369,9 +371,6 @@ async def simulate_delivery(payload: Dict[str, Any]) -> Dict:
     Inspects scenario_id, raw_email content, headers, IP URLs,
     and linguistic urgency patterns to calculate real threat scores.
     """
-    import re
-    import hashlib
-
     scenario_id = payload.get("scenario_id", "")
 
     # Map scenario presets to rich demo payloads
@@ -698,11 +697,12 @@ def release_message(msg_id: str) -> Dict:
         if msg["id"] == msg_id:
             released = msg
             break
-    if released:
-        MOCK_QUARANTINE = [m for m in MOCK_QUARANTINE if m["id"] != msg_id]
-        released["status"] = "DELIVERED"
-        released["is_quarantined"] = False
-        MOCK_INBOX.append(released)
+    if not released:
+        raise HTTPException(status_code=404, detail=f"Message '{msg_id}' not found in quarantine")
+    MOCK_QUARANTINE = [m for m in MOCK_QUARANTINE if m["id"] != msg_id]
+    released["status"] = "DELIVERED"
+    released["is_quarantined"] = False
+    MOCK_INBOX.append(released)
     return {"success": True, "message": f"Message {msg_id} released to inbox"}
 
 

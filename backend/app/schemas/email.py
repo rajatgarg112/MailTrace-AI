@@ -22,7 +22,7 @@ class EmailSummary(BaseModel):
     recipient: str
     subject: str
     timestamp: str
-    status: DeliveryStatusEnum = DeliveryStatusEnum.SAFE
+    status: DeliveryStatusEnum = DeliveryStatusEnum.SCANNING
     verdict: VerdictEnum = VerdictEnum.SAFE
 
 
