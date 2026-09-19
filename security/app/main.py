@@ -612,6 +612,7 @@ def release_from_quarantine(msg_id: str):
     msg = all_messages_store[msg_id]
     msg["is_quarantined"] = False
     msg["delivery_action"] = "DELIVER"
+    msg["status"] = "SAFE"
     msg["policy_summary"] = "Manually released from Quarantine by Administrator."
 
     # Remove from quarantine store, add to inbox store

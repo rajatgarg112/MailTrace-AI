@@ -87,7 +87,14 @@ export const emailService = {
   // Quarantine Actions
   async releaseQuarantine(id) {
     emailsState = emailsState.map((item) =>
-      item.id === id ? { ...item, folder: 'inbox', status: 'WARNING', securityReasons: [...item.securityReasons, 'Manually released by administrator'] } : item
+      item.id === id ? {
+        ...item,
+        folder: 'inbox',
+        status: 'SAFE',
+        riskScore: 0.05,
+        is_quarantined: false,
+        securityReasons: [...(item.securityReasons || []), 'Manually verified safe and released by administrator']
+      } : item
     );
     return true;
   },
@@ -99,7 +106,12 @@ export const emailService = {
 
   async reportPhishing(id) {
     emailsState = emailsState.map((item) =>
-      item.id === id ? { ...item, status: 'REJECTED', securityReasons: [...item.securityReasons, 'User reported as Phishing'] } : item
+      item.id === id ? {
+        ...item,
+        status: 'REJECTED',
+        is_quarantined: true,
+        securityReasons: [...(item.securityReasons || []), 'User reported as Phishing']
+      } : item
     );
     return true;
   },
